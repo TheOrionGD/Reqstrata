@@ -1,5 +1,5 @@
 {
-  "name": "Requirement2System AI",
+  "name": "Reqstrata",
   "description": "AI-Powered Software Requirements, System Design, Development & Testing Platform",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

@@ -1,0 +1,458 @@
+================================================================================
+REQSTRATA — COMPLETE PAGE LIST & ROLE SPECIFIC ACCESS ANALYSIS
+================================================================================
+Application: Reqstrata
+Package: com.theoriongd.reqstrata
+Version: 1.0.1
+Total Identified Screens: 42 Screens
+Access Control: Project-Scoped Role-Based Access Control (RBAC) & MongoDB User Collection Verification
+
+================================================================================
+1. ARCHITECTURAL OVERVIEW OF NAVIGATION & ACCESS CONTROL
+================================================================================
+
+Access control in Reqstrata operates on three synchronized layers:
+
+1. Centralized Routing (AppRoutes.kt):
+   - Location: app/src/main/java/com/theoriongd/reqstrata/ui/navigation/AppRoutes.kt
+   - Defines route contracts, deep link URL parameters, and role-to-dashboard resolution (getRoleDashboardRoute(role)).
+
+2. Dynamic Graph & Bottom Navigation (DynamicNavGraphBuilder.kt):
+   - Location: app/src/main/java/com/theoriongd/reqstrata/ui/navigation/DynamicNavGraphBuilder.kt
+   - Dynamically assembles the Jetpack Compose NavHost graph at runtime based on the user's active role.
+   - Tailors bottom navigation bar tabs so that only destinations authorized for that role appear.
+
+3. RBAC & Data Governance (ProjectAccessPolicy.kt & RouteAuthorization.kt):
+   - Location: app/src/main/java/com/theoriongd/reqstrata/domain/model/ProjectAccessPolicy.kt
+   - Location: app/src/main/java/com/theoriongd/reqstrata/ui/navigation/RouteAuthorization.kt
+   - Verifies user permissions against the MongoDB Atlas user collection (with fallback to local Room state).
+   - If an unauthorized user navigates to a protected route, an "Access Restricted" screen appears with a direct link back to their role dashboard.
+
+
+================================================================================
+2. PUBLIC & AUTHENTICATION PAGES (COMMON TO UNAUTHENTICATED USERS) [7 Screens]
+================================================================================
+
+These 7 pages handle initial onboarding, identity verification, session management, and authentication:
+
+--------------------------------------------------------------------------------
+1. Splash Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/auth/SplashScreen.kt
+   - Route: AppRoutes.SPLASH ("splash")
+   - Access: Public / Unauthenticated
+   - Purpose: App initialization, session validation, active tenant check, and automated navigation dispatch.
+
+2. Onboarding Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/auth/AuthScreens.kt (OnboardingScreen)
+   - Route: AppRoutes.ONBOARDING ("onboarding")
+   - Access: Public / First-time user
+   - Purpose: Workflow overview, introduction to requirements-to-system transformation and AI features.
+
+3. Login Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/auth/AuthScreens.kt (LoginScreen)
+   - Route: AppRoutes.LOGIN ("login")
+   - Access: Public / Unauthenticated
+   - Purpose: Dual-engine authentication (Local Room DB credentials + MongoDB Atlas Stitch Cloud sync).
+
+4. Register Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/auth/AuthScreens.kt (RegisterScreen)
+   - Route: AppRoutes.REGISTER ("register")
+   - Access: Public / Unauthenticated
+   - Purpose: User registration, initial tenant/workspace setup, and default role assignment.
+
+5. Forgot Password Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/auth/AuthScreens.kt (ForgotPasswordScreen)
+   - Route: AppRoutes.FORGOT_PASSWORD ("forgot_password")
+   - Access: Public / Unauthenticated
+   - Purpose: Self-service password recovery initiation.
+
+6. Email Verification Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/auth/EmailVerificationScreen.kt
+   - Route: AppRoutes.EMAIL_VERIFICATION ("email_verification?email={email}")
+   - Access: Public / Unverified user
+   - Purpose: OTP or verification token entry for email validation.
+
+7. Reset Password Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/auth/ResetPasswordScreen.kt
+   - Route: AppRoutes.RESET_PASSWORD ("reset_password?email={email}")
+   - Access: Public / Unauthenticated (with reset token)
+   - Purpose: Secure credential update and confirmation.
+
+
+================================================================================
+3. UNIVERSAL COMMON PAGES (ACCESSIBLE TO ALL AUTHENTICATED USERS) [16 Screens]
+================================================================================
+
+These 16 pages provide universal access across all 5 roles (ADMIN, BUSINESS_ANALYST, ARCHITECT, DEVELOPER, TESTER). Permissions are collaborative or read-oriented:
+
+--------------------------------------------------------------------------------
+1. Project Selection Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/project/MainDashboardProjectsScreen.kt
+   - Route: AppRoutes.PROJECT_SELECTION ("project_selection")
+   - Access: All Authenticated Roles
+   - Purpose: Project workspace selector, multi-project switching, and search.
+
+2. Project Dashboard Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/project/ProjectDashboardScreen.kt
+   - Route: AppRoutes.PROJECT_DASHBOARD ("project_dashboard")
+   - Access: All Authenticated Roles
+   - Purpose: High-level metrics, health status, active account switcher, and quick module tiles.
+
+3. Project Overview Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/project/ProjectOverviewScreen.kt
+   - Route: AppRoutes.PROJECT_OVERVIEW ("project_overview")
+   - Access: All Authenticated Roles
+   - Purpose: Engineering module shortcuts, MongoDB Atlas cluster sync status, ping test, and spec export.
+
+4. Requirements List Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/requirements/RequirementsScreens.kt (RequirementsListScreen)
+   - Route: AppRoutes.REQUIREMENTS_LIST ("requirements_list")
+   - Access: All Authenticated Roles (Read-collaborative)
+   - Purpose: Filter, search, and view all functional and non-functional requirements.
+
+5. Requirement Detail Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/requirements/RequirementsScreens.kt (RequirementDetailScreen)
+   - Route: AppRoutes.REQUIREMENT_DETAIL ("requirement_detail/{reqId}")
+   - Access: All Authenticated Roles
+   - Purpose: Detailed specification view, acceptance criteria, revision history, and linked artifacts.
+
+6. Requirement Comparison Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/requirements/RequirementComparisonScreen.kt
+   - Route: AppRoutes.REQUIREMENT_COMPARISON ("requirement_comparison/{reqId}?v1={v1}&v2={v2}")
+   - Access: All Authenticated Roles
+   - Purpose: Visual version diffing across requirement iterations.
+
+7. Requirement AI Analysis Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/requirements/RequirementAiAnalysisScreen.kt
+   - Route: AppRoutes.REQUIREMENT_AI_ANALYSIS ("requirement_ai_analysis/{reqId}")
+   - Access: All Authenticated Roles
+   - Purpose: Gemini-driven ambiguity, completeness, and testability audit report.
+
+8. Use Cases Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/requirements/RequirementsScreens.kt (UseCasesScreen)
+   - Route: AppRoutes.USE_CASES ("use_cases")
+   - Access: All Authenticated Roles
+   - Purpose: View business use cases, actor interactions, and trigger inventories.
+
+9. Use Case Detail Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/requirements/UseCaseDetailScreen.kt
+   - Route: AppRoutes.USE_CASE_DETAIL ("use_case_detail/{useCaseId}")
+   - Access: All Authenticated Roles
+   - Purpose: Step-by-step main success scenario, alternative branches, and preconditions.
+
+10. Traceability Matrix Screen (RTM)
+    - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/traceability/TraceabilityScreens.kt (TraceabilityMatrixScreen)
+    - Route: AppRoutes.TRACEABILITY_MATRIX ("traceability_matrix")
+    - Access: All Authenticated Roles
+    - Purpose: Bidirectional traceability table: Requirement -> UseCase -> Architecture -> API -> Task -> Test Case.
+
+11. Engineering Documentation Screen
+    - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/documents/DocumentScreens.kt (DocumentViewerScreen)
+    - Route: AppRoutes.DOCUMENT_VIEWER ("document_viewer")
+    - Access: All Authenticated Roles
+    - Purpose: Live markdown document generation for SRS, SDD, API contracts, Test Plans, and RTM reports with MotionCopyButton.
+
+12. Global Search Screen
+    - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/team/TeamAndActivityScreens.kt (GlobalSearchScreen)
+    - Route: AppRoutes.GLOBAL_SEARCH ("global_search")
+    - Access: All Authenticated Roles
+    - Purpose: Unified search indexing across all requirements, components, APIs, tasks, and test suites.
+
+13. Notifications Center Screen
+    - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/team/TeamAndActivityScreens.kt (NotificationsScreen)
+    - Route: AppRoutes.NOTIFICATIONS ("notifications")
+    - Access: All Authenticated Roles
+    - Purpose: In-app real-time notification inbox, unread counts, and priority alerts.
+
+14. Activity Log Screen
+    - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/team/TeamAndActivityScreens.kt (ActivityLogScreen)
+    - Route: AppRoutes.ACTIVITY_LOG ("activity_log")
+    - Access: All Authenticated Roles
+    - Purpose: Immutable project mutation audit trail, actor identity, timestamp, and entity tags.
+
+15. User Profile Screen
+    - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/profile/ProfileAndSettingsScreens.kt (ProfileScreen)
+    - Route: AppRoutes.PROFILE ("profile")
+    - Access: All Authenticated Roles
+    - Purpose: User credentials, active tenant isolation card, active database account switcher, and role matrix.
+
+16. App Settings Screen
+    - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/profile/ProfileAndSettingsScreens.kt (SettingsScreen)
+    - Route: AppRoutes.SETTINGS ("settings")
+    - Access: All Authenticated Roles
+    - Purpose: Dark mode toggle, reduce motion accessibility switch, tactile feedback, and MongoDB sync diagnostics.
+
+
+================================================================================
+4. ROLE-SPECIFIC PAGES & DEDICATED ENGINEERING HUBS [19 Screens]
+================================================================================
+
+These 19 screens are restricted according to project-scoped RBAC and MongoDB user permissions:
+
+--------------------------------------------------------------------------------
+A. ADMINISTRATOR PAGES (ADMIN) [7 Screens]
+--------------------------------------------------------------------------------
+
+1. Admin Dashboard Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/project/AdminDashboardScreen.kt
+   - Route: AppRoutes.ADMIN_DASHBOARD ("admin_dashboard")
+   - Roles: ADMIN
+   - Purpose: Executive project status, cloud cluster health, member counts, and team velocity.
+
+2. Create Project Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/project/ProjectScreens.kt (CreateProjectScreen)
+   - Route: AppRoutes.CREATE_PROJECT ("create_project")
+   - Roles: ADMIN
+   - Purpose: Workspace creation, domain assignment, methodology configuration, and tenant isolation setup.
+
+3. Project Settings Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/project/ProjectSettingsScreen.kt
+   - Route: AppRoutes.PROJECT_SETTINGS ("project_settings")
+   - Roles: ADMIN
+   - Purpose: General configuration, project archive toggle, and permanent project deletion.
+
+4. Role Governance Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/team/RoleManagementScreen.kt
+   - Route: AppRoutes.ROLE_MANAGEMENT ("role_management")
+   - Roles: ADMIN
+   - Purpose: RBAC role hierarchy audit, member permission modification, and authority reassignment.
+
+5. Invite Member Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/team/InviteMemberScreen.kt
+   - Route: AppRoutes.INVITE_MEMBER ("invite_member")
+   - Roles: ADMIN
+   - Purpose: Role-authorized project invitation dispatch and access boundary assignment.
+
+6. Team Management Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/team/TeamAndActivityScreens.kt (TeamManagementScreen)
+   - Route: AppRoutes.TEAM_MANAGEMENT ("team_management")
+   - Roles: ADMIN, BUSINESS_ANALYST
+   - Purpose: Team member directory, status overview, and project member administrative management.
+
+7. Member Detail Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/team/MemberDetailScreen.kt
+   - Route: AppRoutes.MEMBER_DETAIL ("member_detail/{memberId}")
+   - Roles: ADMIN (Write/Remove), ALL (View profile)
+   - Purpose: View member metadata, reassign project authority, or remove from project.
+
+--------------------------------------------------------------------------------
+B. BUSINESS ANALYST PAGES (BUSINESS_ANALYST & ADMIN) [5 Screens]
+--------------------------------------------------------------------------------
+
+1. Business Analyst Dashboard Screen (BA Hub)
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/requirements/BusinessAnalystDashboardScreen.kt
+   - Route: AppRoutes.BA_DASHBOARD ("ba_dashboard")
+   - Roles: BUSINESS_ANALYST, ADMIN
+   - Purpose: Requirements velocity, approval bottlenecks, priority breakdown, and backlog health.
+
+2. New Requirement Form Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/requirements/NewRequirementFormScreen.kt
+   - Route: AppRoutes.NEW_REQUIREMENT_FORM ("new_requirement_form")
+   - Roles: BUSINESS_ANALYST, ADMIN
+   - Purpose: Streamlined requirement creation with acceptance criteria and priority tagging.
+
+3. Create / Edit Requirement Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/requirements/RequirementsScreens.kt (CreateEditRequirementScreen)
+   - Route: AppRoutes.CREATE_EDIT_REQUIREMENT ("create_edit_requirement?reqId={reqId}")
+   - Roles: BUSINESS_ANALYST, ADMIN
+   - Purpose: Full version-controlled requirement authoring and modification form.
+
+4. AI Requirements Generator Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/requirements/GenerateRequirementsScreen.kt
+   - Route: AppRoutes.GENERATE_REQUIREMENTS ("generate_requirements?projectId={projectId}")
+   - Roles: BUSINESS_ANALYST, ADMIN
+   - Purpose: Gemini-driven functional specification and acceptance criteria synthesizer.
+
+5. Approval Center Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/project/ApprovalCenterScreen.kt
+   - Route: AppRoutes.APPROVAL_CENTER ("approval_center")
+   - Roles: BUSINESS_ANALYST, ARCHITECT, ADMIN
+   - Purpose: Sign-off queue to approve, reject, or request revisions on specs with audit records.
+
+--------------------------------------------------------------------------------
+C. SYSTEM ARCHITECT PAGES (ARCHITECT & ADMIN) [9 Screens]
+--------------------------------------------------------------------------------
+
+1. Architect Dashboard Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/architecture/ArchitectDashboardScreen.kt
+   - Route: AppRoutes.ARCHITECT_DASHBOARD ("architect_dashboard")
+   - Roles: ARCHITECT, ADMIN
+   - Purpose: Architectural completeness index, layer distribution, and unassigned component warnings.
+
+2. Architecture Workspace Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/architecture/ArchitectureScreens.kt (ArchitectureWorkspaceScreen)
+   - Route: AppRoutes.ARCHITECTURE_WORKSPACE ("architecture_workspace")
+   - Roles: ARCHITECT, ADMIN (Write), ALL (View)
+   - Purpose: Clean Architecture module hierarchy and component registration.
+
+3. Component Detail Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/architecture/ArchitectureComponentDetailScreen.kt
+   - Route: AppRoutes.ARCHITECTURE_COMPONENT_DETAIL ("architecture_component_detail/{componentId}")
+   - Roles: ARCHITECT, ADMIN (Write), ALL (View)
+   - Purpose: Component responsibilities, tech stack, API bindings, DB entities, and linked tasks.
+
+4. Architecture Decisions Screen (ADRs)
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/architecture/ArchitectureDecisionsScreen.kt
+   - Route: AppRoutes.ARCHITECTURE_DECISIONS ("architecture_decisions")
+   - Roles: ARCHITECT, ADMIN (Write), ALL (View)
+   - Purpose: Formal Architecture Decision Records (Context, Decision, Consequences, Status).
+
+5. UML Studio Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/architecture/ArchitectureScreens.kt (UmlStudioScreen)
+   - Route: AppRoutes.UML_STUDIO ("uml_studio")
+   - Roles: ARCHITECT, ADMIN (Write), ALL (View)
+   - Purpose: Interactive diagram visualizer for Class, Sequence, Component, ERD, and Activity diagrams.
+
+6. Database Designer Screen (ERD)
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/design/DesignersScreens.kt (DatabaseDesignerScreen)
+   - Route: AppRoutes.DATABASE_DESIGNER ("database_designer")
+   - Roles: ARCHITECT, ADMIN (Write), ALL (View)
+   - Purpose: Entity modeling, primary/foreign keys, schema attributes, and SQL/Mongo migration generator.
+
+7. API Designer Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/design/DesignersScreens.kt (ApiDesignerScreen)
+   - Route: AppRoutes.API_DESIGNER ("api_designer")
+   - Roles: ARCHITECT, ADMIN (Write), DEVELOPER (Read/Consume)
+   - Purpose: RESTful endpoint definition, HTTP methods, JSON schema contracts, and auth requirements.
+
+8. AI Architecture Synthesizer Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/architecture/SuggestArchitectureScreen.kt
+   - Route: AppRoutes.SUGGEST_ARCHITECTURE ("suggest_architecture?projectId={projectId}")
+   - Roles: ARCHITECT, ADMIN
+   - Purpose: Gemini recommendation engine for Clean Architecture layers and ADR drafting.
+
+9. System Design AI Chat Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/ai/RequirementSystemDesignChatScreen.kt
+   - Route: AppRoutes.PROJECT_AI_ASSISTANT ("project_ai_assistant")
+   - Roles: ARCHITECT, ADMIN
+   - Purpose: Conversational architectural assistant for scaling, caching, and infrastructure trade-offs.
+
+--------------------------------------------------------------------------------
+D. SOFTWARE DEVELOPER PAGES (DEVELOPER & ADMIN) [3 Screens]
+--------------------------------------------------------------------------------
+
+1. Developer Dashboard Screen (Dev Hub)
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/tasks/DeveloperDashboardScreen.kt
+   - Route: AppRoutes.DEVELOPER_DASHBOARD ("developer_dashboard")
+   - Roles: DEVELOPER, ADMIN
+   - Purpose: Personal task queue, sprint deadlines, assigned API endpoints, and requirement links.
+
+2. Task Management Screen (Kanban Board)
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/tasks/TaskManagementScreen.kt
+   - Route: AppRoutes.TASK_MANAGEMENT ("task_management")
+   - Roles: DEVELOPER, ADMIN (Write), ALL (View)
+   - Purpose: Kanban-style task execution board with state transitions (TODO -> IN_PROGRESS -> IN_REVIEW -> DONE).
+
+3. Developer AI Assistant Screen (Code Copilot)
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/ai/DeveloperAIAssistantScreen.kt
+   - Route: AppRoutes.DEVELOPER_AI_ASSISTANT ("developer_ai_assistant")
+   - Roles: DEVELOPER, ADMIN
+   - Purpose: Gemini code generation from requirement specs, entity models, and API schemas.
+
+--------------------------------------------------------------------------------
+E. QA ENGINEER / TESTER PAGES (TESTER & ADMIN) [6 Screens]
+--------------------------------------------------------------------------------
+
+1. Tester Dashboard Screen (QA Hub)
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/testing/TesterDashboardScreen.kt
+   - Route: AppRoutes.TESTER_DASHBOARD ("tester_dashboard")
+   - Roles: TESTER, ADMIN
+   - Purpose: Pass/Fail execution ratios, QA velocity, defect discovery count, and test run status.
+
+2. Testing Workspace Screen (Test Suites & Cases)
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/testing/TestingWorkspaceScreen.kt
+   - Route: AppRoutes.TESTING_WORKSPACE ("testing_workspace")
+   - Roles: TESTER, ADMIN (Write), ALL (View)
+   - Purpose: Test suite management, test case authoring, severity levels, and requirement linking.
+
+3. Test Execution Workspace Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/testing/TestExecutionWorkspaceScreen.kt
+   - Route: AppRoutes.TEST_EXECUTION_WORKSPACE ("test_execution_workspace")
+   - Roles: TESTER, ADMIN
+   - Purpose: Step-by-step test execution, actual vs. expected results, status recording (Passed/Failed/Blocked).
+
+4. Coverage Dashboard Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/testing/CoverageDashboardScreen.kt
+   - Route: AppRoutes.COVERAGE_DASHBOARD ("coverage_dashboard")
+   - Roles: TESTER, ADMIN (Write), ALL (View)
+   - Purpose: Requirement test coverage percentage meter, covered requirements vs. uncovered test gap tracker.
+
+5. AI Test Suite Generator Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/testing/GenerateTestSuiteScreen.kt
+   - Route: AppRoutes.GENERATE_TEST_SUITE ("generate_test_suite?projectId={projectId}")
+   - Roles: TESTER, ADMIN
+   - Purpose: Automated test case synthesis from acceptance criteria using Gemini API.
+
+6. Change Impact Dashboard Screen
+   - File: app/src/main/java/com/theoriongd/reqstrata/ui/screens/traceability/ChangeImpactDashboardScreen.kt
+   - Route: AppRoutes.CHANGE_IMPACT ("change_impact?reqId={reqId}")
+   - Roles: TESTER, ARCHITECT, ADMIN
+   - Purpose: AI-driven blast radius analysis evaluating regression risks across APIs, DB entities, and tests.
+
+
+================================================================================
+5. MASTER SCREEN INVENTORY SUMMARY MATRIX
+================================================================================
+
++----+------------------------------------+------------------------------------+--------------------------+-----------------------+
+| #  | Screen Name                        | File Path                          | Route Constant           | Primary Target Roles  |
++----+------------------------------------+------------------------------------+--------------------------+-----------------------+
+| 1  | Splash Screen                      | screens/auth/SplashScreen.kt       | SPLASH                   | Public                |
+| 2  | Onboarding Screen                  | screens/auth/AuthScreens.kt        | ONBOARDING               | Public                |
+| 3  | Login Screen                       | screens/auth/AuthScreens.kt        | LOGIN                    | Public                |
+| 4  | Register Screen                    | screens/auth/AuthScreens.kt        | REGISTER                 | Public                |
+| 5  | Forgot Password Screen             | screens/auth/AuthScreens.kt        | FORGOT_PASSWORD          | Public                |
+| 6  | Email Verification Screen          | screens/auth/EmailVerification.kt  | EMAIL_VERIFICATION       | Public                |
+| 7  | Reset Password Screen              | screens/auth/ResetPassword.kt      | RESET_PASSWORD           | Public                |
+| 8  | Project Selection Screen           | screens/project/MainDashboard.kt   | PROJECT_SELECTION        | All Roles (Common)    |
+| 9  | Project Dashboard Screen           | screens/project/ProjectDashboard.kt| PROJECT_DASHBOARD        | All Roles (Common)    |
+| 10 | Project Overview Screen            | screens/project/ProjectOverview.kt | PROJECT_OVERVIEW         | All Roles (Common)    |
+| 11 | Requirements List Screen           | screens/requirements/ReqScreens.kt | REQUIREMENTS_LIST        | All Roles (Common)    |
+| 12 | Requirement Detail Screen          | screens/requirements/ReqScreens.kt | REQUIREMENT_DETAIL       | All Roles (Common)    |
+| 13 | Requirement Comparison Screen      | screens/requirements/ReqCompare.kt | REQUIREMENT_COMPARISON   | All Roles (Common)    |
+| 14 | Requirement AI Analysis Screen     | screens/requirements/ReqAiAnalysis | REQUIREMENT_AI_ANALYSIS  | All Roles (Common)    |
+| 15 | Use Cases Screen                   | screens/requirements/ReqScreens.kt | USE_CASES                | All Roles (Common)    |
+| 16 | Use Case Detail Screen             | screens/requirements/UseCaseDetail | USE_CASE_DETAIL          | All Roles (Common)    |
+| 17 | Traceability Matrix Screen (RTM)   | screens/traceability/Traceability. | TRACEABILITY_MATRIX      | All Roles (Common)    |
+| 18 | Engineering Documentation Screen   | screens/documents/DocumentScreens. | DOCUMENT_VIEWER          | All Roles (Common)    |
+| 19 | Global Search Screen               | screens/team/TeamAndActivity.kt    | GLOBAL_SEARCH            | All Roles (Common)    |
+| 20 | Notifications Center Screen        | screens/team/TeamAndActivity.kt    | NOTIFICATIONS            | All Roles (Common)    |
+| 21 | Activity Log Screen                | screens/team/TeamAndActivity.kt    | ACTIVITY_LOG             | All Roles (Common)    |
+| 22 | User Profile Screen                | screens/profile/ProfileSettings.kt | PROFILE                  | All Roles (Common)    |
+| 23 | App Settings Screen                | screens/profile/ProfileSettings.kt | SETTINGS                 | All Roles (Common)    |
+| 24 | Admin Dashboard Screen             | screens/project/AdminDashboard.kt  | ADMIN_DASHBOARD          | ADMIN                 |
+| 25 | Create Project Screen              | screens/project/ProjectScreens.kt  | CREATE_PROJECT           | ADMIN                 |
+| 26 | Project Settings Screen            | screens/project/ProjectSettings.kt | PROJECT_SETTINGS         | ADMIN                 |
+| 27 | Role Governance Screen             | screens/team/RoleManagementScreen. | ROLE_MANAGEMENT          | ADMIN                 |
+| 28 | Invite Member Screen               | screens/team/InviteMemberScreen.kt | INVITE_MEMBER            | ADMIN                 |
+| 29 | Team Management Screen             | screens/team/TeamAndActivity.kt    | TEAM_MANAGEMENT          | ADMIN, BA             |
+| 30 | Member Detail Screen               | screens/team/MemberDetailScreen.kt | MEMBER_DETAIL            | ADMIN (Write) / ALL   |
+| 31 | Business Analyst Dashboard Screen  | screens/requirements/BADashboard.kt| BA_DASHBOARD             | BA, ADMIN             |
+| 32 | New Requirement Form Screen        | screens/requirements/NewReqForm.kt | NEW_REQUIREMENT_FORM     | BA, ADMIN             |
+| 33 | Create / Edit Requirement Screen   | screens/requirements/ReqScreens.kt | CREATE_EDIT_REQUIREMENT  | BA, ADMIN             |
+| 34 | AI Requirements Generator Screen   | screens/requirements/GenerateReqs. | GENERATE_REQUIREMENTS    | BA, ADMIN             |
+| 35 | Approval Center Screen             | screens/project/ApprovalCenter.kt  | APPROVAL_CENTER          | BA, ARCHITECT, ADMIN  |
+| 36 | Architect Dashboard Screen         | screens/architecture/ArchitectDash | ARCHITECT_DASHBOARD       | ARCHITECT, ADMIN      |
+| 37 | Architecture Workspace Screen      | screens/architecture/ArchScreens.kt| ARCHITECTURE_WORKSPACE   | ARCHITECT, ADMIN      |
+| 38 | Component Detail Screen            | screens/architecture/ComponentDet. | ARCHITECTURE_COMPONENT   | ARCHITECT, ADMIN      |
+| 39 | Architecture Decisions Screen(ADR) | screens/architecture/ArchDecisions | ARCHITECTURE_DECISIONS   | ARCHITECT, ADMIN      |
+| 40 | UML Studio Screen                  | screens/architecture/ArchScreens.kt| UML_STUDIO               | ARCHITECT, ADMIN      |
+| 41 | Database Designer Screen (ERD)     | screens/design/DesignersScreens.kt  | DATABASE_DESIGNER         | ARCHITECT, ADMIN      |
+| 42 | API Designer Screen                | screens/design/DesignersScreens.kt  | API_DESIGNER             | ARCHITECT, DEVELOPER  |
+| 43 | AI Architecture Synthesizer Screen | screens/architecture/SuggestArch.kt| SUGGEST_ARCHITECTURE     | ARCHITECT, ADMIN      |
+| 44 | System Design AI Chat Screen       | screens/ai/ReqSystemDesignChat.kt   | PROJECT_AI_ASSISTANT      | ARCHITECT, ADMIN      |
+| 45 | Developer Dashboard Screen         | screens/tasks/DeveloperDashboard.kt | DEVELOPER_DASHBOARD      | DEVELOPER, ADMIN      |
+| 46 | Task Management Screen             | screens/tasks/TaskManagement.kt     | TASK_MANAGEMENT          | DEVELOPER, ADMIN      |
+| 47 | Developer AI Assistant Screen      | screens/ai/DeveloperAIAssistant.kt  | DEVELOPER_AI_ASSISTANT    | DEVELOPER, ADMIN      |
+| 48 | Tester Dashboard Screen            | screens/testing/TesterDashboard.kt  | TESTER_DASHBOARD         | TESTER, ADMIN         |
+| 49 | Testing Workspace Screen           | screens/testing/TestingWorkspace.kt | TESTING_WORKSPACE        | TESTER, ADMIN         |
+| 50 | Test Execution Workspace Screen    | screens/testing/TestExecution.kt    | TEST_EXECUTION_WORKSPACE | TESTER, ADMIN         |
+| 51 | Coverage Dashboard Screen          | screens/testing/CoverageDashboard.kt| COVERAGE_DASHBOARD       | TESTER, ADMIN         |
+| 52 | AI Test Suite Generator Screen     | screens/testing/GenerateTestSuite.kt| GENERATE_TEST_SUITE      | TESTER, ADMIN         |
+| 53 | Change Impact Dashboard Screen     | screens/traceability/ChangeImpact.kt| CHANGE_IMPACT            | TESTER, ARCH, ADMIN   |
++----+------------------------------------+------------------------------------+--------------------------+-----------------------+
+
+Total Unique Screens: 42 Screens (plus sub-views / modal variants)
+================================================================================
+END OF ANALYSIS
+================================================================================

@@ -16,3 +16,4 @@
 local.properties
 .env
 debug.keystore
+app/src/main/java/com/theoriongd/reqstrata/data/remote/GeminiApiClient.kt

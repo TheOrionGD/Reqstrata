@@ -1,5 +1,9 @@
 package com.theoriongd.reqstrata.ui.screens.project
+import androidx.compose.material.icons.automirrored.filled.*
 
+import androidx.compose.material.icons.automirrored.filled.Rule
+import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
@@ -29,6 +33,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.theoriongd.reqstrata.data.local.entity.RequirementEntity
 import com.theoriongd.reqstrata.domain.model.ProjectRole
+import com.theoriongd.reqstrata.domain.model.ProjectAccessPolicy
+import com.theoriongd.reqstrata.domain.model.ProjectModule
 import com.theoriongd.reqstrata.domain.model.RequirementPriority
 import com.theoriongd.reqstrata.domain.model.RequirementStatus
 import com.theoriongd.reqstrata.ui.MainViewModel
@@ -51,7 +57,6 @@ fun ProjectDashboardScreen(viewModel: MainViewModel) {
     val project by viewModel.currentProject.collectAsState()
     val user by viewModel.currentUser.collectAsState()
     val currentRole by viewModel.currentRole.collectAsState()
-    val activeAccounts by viewModel.activeDatabaseAccounts.collectAsState()
 
     // Live requirement stream
     val reqList by viewModel.reqRepo.getRequirements(project?.id ?: "").collectAsState(initial = emptyList())
@@ -61,7 +66,6 @@ fun ProjectDashboardScreen(viewModel: MainViewModel) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedPriorityFilter by remember { mutableStateOf<RequirementPriority?>(null) }
     var selectedTopTab by remember { mutableStateOf(DashboardTab.ACTIVE) }
-    var showRoleSwitcherDialog by remember { mutableStateOf(false) }
 
     // Counts per status category
     val activeCount = remember(reqList) {
@@ -124,20 +128,6 @@ fun ProjectDashboardScreen(viewModel: MainViewModel) {
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color(0xFF8B5CF6)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                color = Color(0xFF6D28D9).copy(alpha = 0.25f),
-                                shape = RoundedCornerShape(4.dp),
-                                modifier = Modifier.clickable { showRoleSwitcherDialog = true }
-                            ) {
-                                Text(
-                                    text = "SWITCH",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF8B5CF6),
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                )
-                            }
                         }
                     }
                 },
@@ -430,14 +420,17 @@ fun ProjectDashboardScreen(viewModel: MainViewModel) {
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(18.dp))
-                            Button(
-                                onClick = { viewModel.navigateTo(Screen.NewRequirementForm) },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6D28D9)),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Icon(Icons.Default.AddCircleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Author New Requirement")
+                            val canAuthor = ProjectAccessPolicy.canWrite(currentRole, ProjectModule.REQUIREMENTS) || currentRole == ProjectRole.ADMIN
+                            if (canAuthor) {
+                                Button(
+                                    onClick = { viewModel.navigateTo(Screen.NewRequirementForm) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6D28D9)),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Icon(Icons.Default.AddCircleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Author New Requirement")
+                                }
                             }
                         }
                     }
@@ -455,8 +448,10 @@ fun ProjectDashboardScreen(viewModel: MainViewModel) {
                             slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)),
                     exit = fadeOut()
                 ) {
+                    val canEditReq = ProjectAccessPolicy.canWrite(currentRole, ProjectModule.REQUIREMENTS) || currentRole == ProjectRole.ADMIN
                     RequirementDocumentSummaryCard(
                         requirement = req,
+                        canEdit = canEditReq,
                         onViewDetail = {
                             viewModel.navigateTo(Screen.RequirementDetail(req.id))
                         },
@@ -475,23 +470,291 @@ fun ProjectDashboardScreen(viewModel: MainViewModel) {
     } // end Box
 } // end Scaffold
 
-    // Role Switcher Dialog (Direct Database Auth)
-    if (showRoleSwitcherDialog) {
-        ActiveAccountRoleSwitcherDialog(
-            activeAccounts = activeAccounts,
-            currentRole = currentRole,
-            onSelectAccount = { selectedUser ->
-                viewModel.loginWithActiveAccount(selectedUser)
-                showRoleSwitcherDialog = false
-            },
-            onDismiss = { showRoleSwitcherDialog = false }
-        )
+} // end ProjectDashboardScreen
+
+@Composable
+fun RequirementDocumentSummaryCard(
+    requirement: RequirementEntity,
+    canEdit: Boolean = true,
+    onViewDetail: () -> Unit,
+    onEdit: () -> Unit
+) {
+    val priorityColor = when (requirement.priority.uppercase()) {
+        "CRITICAL", "BLOCKER" -> Color(0xFFEF4444)
+        "HIGH" -> Color(0xFFF97316)
+        "MEDIUM" -> Color(0xFFF59E0B)
+        else -> Color(0xFF10B981)
+    }
+
+    val statusColor = when (requirement.status.uppercase()) {
+        "APPROVED", "ACTIVE" -> Color(0xFF10B981)
+        "UNDER REVIEW" -> Color(0xFFF59E0B)
+        "DRAFT" -> Color(0xFF71717A)
+        else -> Color(0xFFA1A1AA)
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScale()
+            .clip(RoundedCornerShape(14.dp))
+            .clickable { onViewDetail() }
+            .testTag("req_card_${requirement.code}"),
+        color = Color(0xFF27272A),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, Color(0xFF27272A))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = Color(0xFF6D28D9).copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = requirement.code,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF8B5CF6),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Surface(
+                        color = Color(0xFF27272A),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = "v${requirement.version}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFFA1A1AA),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Surface(
+                        color = Color(0xFF27272A),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = requirement.type,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFFA1A1AA),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = priorityColor.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, priorityColor.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Text(
+                            text = requirement.priority,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = priorityColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    Surface(
+                        color = statusColor.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Text(
+                            text = requirement.status,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = statusColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = requirement.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = requirement.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFA1A1AA),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.PersonOutline,
+                        contentDescription = null,
+                        tint = Color(0xFF71717A),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = requirement.authorName.ifBlank { "Author" },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF71717A)
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (canEdit) {
+                        TextButton(
+                            onClick = onEdit,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF8B5CF6), modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Edit", color = Color(0xFF8B5CF6), style = MaterialTheme.typography.labelSmall)
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+
+                    TextButton(
+                        onClick = onViewDetail,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                    ) {
+                        Text("View Specs", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View", tint = Color.White, modifier = Modifier.size(14.dp))
+                    }
+                }
+            }
+        }
     }
 }
 
-/**
- * Summary metrics banner displaying active document counts and real-time MongoDB status.
- */
+@Composable
+fun RoleBasedWorkspaceDock(
+    currentRole: ProjectRole,
+    onNavigate: (Screen) -> Unit
+) {
+    val authorizedTiles = remember(currentRole) {
+        when (currentRole) {
+            ProjectRole.ADMIN -> listOf(
+                Triple("Architecture", Icons.Default.Hub, Screen.ArchitectureWorkspace),
+                Triple("Tasks", Icons.Default.Checklist, Screen.TaskManagement),
+                Triple("Testing", Icons.AutoMirrored.Filled.FactCheck, Screen.TestingWorkspace),
+                Triple("Settings", Icons.Default.Tune, Screen.ProjectSettings)
+            )
+            ProjectRole.BUSINESS_ANALYST -> listOf(
+                Triple("BA Hub", Icons.Default.Analytics, Screen.BusinessAnalystDashboard),
+                Triple("Req Specs", Icons.AutoMirrored.Filled.ListAlt, Screen.RequirementsList),
+                Triple("Use Cases", Icons.Default.AccountTree, Screen.UseCases),
+                Triple("AI Gen", Icons.Default.AutoAwesome, Screen.GenerateRequirements())
+            )
+            ProjectRole.ARCHITECT -> listOf(
+                Triple("Architecture", Icons.Default.Hub, Screen.ArchitectureWorkspace),
+                Triple("Database", Icons.Default.Storage, Screen.DatabaseDesigner),
+                Triple("APIs", Icons.Default.Http, Screen.ApiDesigner),
+                Triple("AI Design", Icons.Default.AutoAwesome, Screen.ProjectAiAssistant)
+            )
+            ProjectRole.DEVELOPER -> listOf(
+                Triple("Tasks", Icons.Default.Checklist, Screen.TaskManagement),
+                Triple("APIs", Icons.Default.Api, Screen.ApiDesigner),
+                Triple("Req Specs", Icons.Default.Description, Screen.RequirementsList),
+                Triple("Copilot", Icons.Default.SmartToy, Screen.DeveloperAiAssistant)
+            )
+            ProjectRole.TESTER -> listOf(
+                Triple("QA Hub", Icons.AutoMirrored.Filled.FactCheck, Screen.TesterDashboard),
+                Triple("Suites", Icons.AutoMirrored.Filled.Rule, Screen.TestingWorkspace),
+                Triple("Execute", Icons.Default.PlayCircle, Screen.TestExecutionWorkspace),
+                Triple("Coverage", Icons.Default.PieChart, Screen.CoverageDashboard)
+            )
+        }
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFF27272A),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, Color(0xFF27272A))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(
+                text = "Authorized Workspaces (${currentRole.title})",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF8B5CF6)
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                authorizedTiles.forEach { (title, icon, screen) ->
+                    WorkspaceTile(
+                        title = title,
+                        icon = icon,
+                        onClick = { onNavigate(screen) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WorkspaceTile(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .pressScale()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onClick() },
+        color = Color(0xFF27272A),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = Color(0xFF8B5CF6),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White
+            )
+        }
+    }
+}
+
 @Composable
 fun DashboardSummaryMetricsHeader(
     totalCount: Int,
@@ -613,366 +876,3 @@ fun MetricPill(title: String, value: String, color: Color, modifier: Modifier = 
     }
 }
 
-/**
- * Requirement Document Summary Card designed according to Material 3 guidelines.
- */
-@Composable
-fun RequirementDocumentSummaryCard(
-    requirement: RequirementEntity,
-    onViewDetail: () -> Unit,
-    onEdit: () -> Unit
-) {
-    val priorityColor = when (requirement.priority.uppercase()) {
-        "CRITICAL" -> Color(0xFFEF4444)
-        "HIGH" -> Color(0xFFF59E0B)
-        "MEDIUM" -> Color(0xFF8B5CF6)
-        else -> Color(0xFFA1A1AA)
-    }
-
-    val statusColor = when (requirement.status.uppercase()) {
-        "APPROVED", "ACTIVE" -> Color(0xFF10B981)
-        "UNDER REVIEW" -> Color(0xFFF59E0B)
-        "DRAFT" -> Color(0xFF71717A)
-        else -> Color(0xFFA1A1AA)
-    }
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pressScale()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable { onViewDetail() }
-            .testTag("req_card_${requirement.code}"),
-        color = Color(0xFF27272A),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, Color(0xFF27272A))
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header Row: Code, Version, Priority Pill, Status Badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        color = Color(0xFF6D28D9).copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text(
-                            text = requirement.code,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF8B5CF6),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Surface(
-                        color = Color(0xFF27272A),
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text(
-                            text = "v${requirement.version}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFFA1A1AA),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Surface(
-                        color = Color(0xFF27272A),
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text(
-                            text = requirement.type,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFFA1A1AA),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Priority Pill
-                    Surface(
-                        color = priorityColor.copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, priorityColor.copy(alpha = 0.5f)),
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Text(
-                            text = requirement.priority,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = priorityColor,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    // Status Pill
-                    Surface(
-                        color = statusColor.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Text(
-                            text = requirement.status,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = statusColor,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Title
-            Text(
-                text = requirement.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Detailed Description snippet
-            Text(
-                text = requirement.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFFA1A1AA),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Metadata & Action Bar
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.PersonOutline,
-                        contentDescription = null,
-                        tint = Color(0xFF71717A),
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = requirement.authorName.ifBlank { "Architect" },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF71717A)
-                    )
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(
-                        onClick = onEdit,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF8B5CF6), modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Edit", color = Color(0xFF8B5CF6), style = MaterialTheme.typography.labelSmall)
-                    }
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    TextButton(
-                        onClick = onViewDetail,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                    ) {
-                        Text("View Specs", color = Color.White, style = MaterialTheme.typography.labelSmall)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View", tint = Color.White, modifier = Modifier.size(14.dp))
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Role-Based Navigation Dock facilitating fast switching between role workspaces.
- */
-@Composable
-fun RoleBasedWorkspaceDock(
-    currentRole: ProjectRole,
-    onNavigate: (Screen) -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF27272A),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, Color(0xFF27272A))
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Text(
-                text = "Role Workspaces (${currentRole.title})",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF8B5CF6)
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                WorkspaceTile(
-                    title = "Architecture",
-                    icon = Icons.Default.Hub,
-                    onClick = { onNavigate(Screen.ArchitectureWorkspace) },
-                    modifier = Modifier.weight(1f)
-                )
-                WorkspaceTile(
-                    title = "Tasks",
-                    icon = Icons.Default.Checklist,
-                    onClick = { onNavigate(Screen.TaskManagement) },
-                    modifier = Modifier.weight(1f)
-                )
-                WorkspaceTile(
-                    title = "Testing",
-                    icon = Icons.Default.FactCheck,
-                    onClick = { onNavigate(Screen.TestingWorkspace) },
-                    modifier = Modifier.weight(1f)
-                )
-                WorkspaceTile(
-                    title = "Database",
-                    icon = Icons.Default.Storage,
-                    onClick = { onNavigate(Screen.DatabaseDesigner) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun WorkspaceTile(
-    title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier
-            .pressScale()
-            .clip(RoundedCornerShape(8.dp))
-            .clickable { onClick() },
-        color = Color(0xFF27272A),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = Color(0xFF8B5CF6),
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White
-            )
-        }
-    }
-}
-
-/**
- * Role Switcher Dialog for active database accounts.
- */
-@Composable
-fun ActiveAccountRoleSwitcherDialog(
-    activeAccounts: List<com.theoriongd.reqstrata.data.local.entity.UserEntity>,
-    currentRole: ProjectRole,
-    onSelectAccount: (com.theoriongd.reqstrata.data.local.entity.UserEntity) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Column {
-                Text("Switch Active Role Account", fontWeight = FontWeight.Bold, color = Color.White)
-                Text(
-                    "Direct Role Authentication — authenticated against active database records.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFA1A1AA)
-                )
-            }
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                activeAccounts.forEach { account ->
-                    val isCurrent = account.titleOrRole.contains(currentRole.name, true)
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .pressScale()
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { onSelectAccount(account) },
-                        color = if (isCurrent) Color(0xFF6D28D9).copy(alpha = 0.25f) else Color(0xFF27272A),
-                        border = BorderStroke(
-                            1.dp,
-                            if (isCurrent) Color(0xFF6D28D9) else Color(0xFF3F3F46)
-                        ),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(Color(account.avatarColor), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = account.fullName.take(1),
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = account.fullName,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = "${account.titleOrRole} • Active DB Account",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF10B981)
-                                )
-                            }
-                            if (isCurrent) {
-                                Icon(
-                                    Icons.Default.Check,
-                                    contentDescription = "Active",
-                                    tint = Color(0xFF8B5CF6)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close", color = Color(0xFF8B5CF6))
-            }
-        },
-        containerColor = Color(0xFF18181B)
-    )
-}

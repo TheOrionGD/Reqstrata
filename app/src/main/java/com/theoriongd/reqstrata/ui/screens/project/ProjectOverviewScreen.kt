@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.project
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -21,6 +22,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.theoriongd.reqstrata.domain.model.ProjectRole
+import com.theoriongd.reqstrata.domain.model.ProjectAccessPolicy
+import com.theoriongd.reqstrata.domain.model.ProjectModule
 import com.theoriongd.reqstrata.ui.MainViewModel
 import com.theoriongd.reqstrata.ui.Screen
 import com.theoriongd.reqstrata.ui.components.AiActionCard
@@ -64,7 +67,6 @@ fun ProjectOverviewScreen(viewModel: MainViewModel) {
         ((covered.toFloat() / approvedReqs) * 100).toInt()
     } else 0
 
-    var showRoleMenu by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
@@ -205,13 +207,13 @@ fun ProjectOverviewScreen(viewModel: MainViewModel) {
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "MongoDB Atlas Cloud Database",
+                                    text = "Enterprise Workspace Sync",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "${MongoDbService.MONGODB_CLUSTER} • ${MongoDbService.DATABASE_NAME}",
+                                    text = "Encrypted Partition Synchronization • Real-Time Consistency",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color(0xFF10B981)
                                 )
@@ -310,13 +312,12 @@ fun ProjectOverviewScreen(viewModel: MainViewModel) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Role Banner & Interactive Role Switcher
+            // Role Banner (Display only, tenant-scoped)
             Surface(
                 color = Color(0xFF27272A),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { showRoleMenu = true }
                     .testTag("role_switcher_banner")
             ) {
                 Row(
@@ -341,123 +342,46 @@ fun ProjectOverviewScreen(viewModel: MainViewModel) {
                             )
                         }
                     }
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Switch Role", tint = Color(0xFF8B5CF6))
-                }
-
-                DropdownMenu(
-                    expanded = showRoleMenu,
-                    onDismissRequest = { showRoleMenu = false }
-                ) {
-                    ProjectRole.entries.forEach { role ->
-                        DropdownMenuItem(
-                            text = {
-                                Column {
-                                    Text(role.title, fontWeight = FontWeight.Bold)
-                                    Text(role.description, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                                }
-                            },
-                            onClick = {
-                                viewModel.switchRoleForTesting(role)
-                                showRoleMenu = false
-                            },
-                            leadingIcon = {
-                                RoleBadge(role = role)
-                            }
-                        )
-                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Workspace Module Shortcuts
-            Text("Engineering Workspaces", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.White)
-            Spacer(modifier = Modifier.height(8.dp))
+            // Workspace Module Shortcuts (Filtered dynamically by role permission)
+            val allWorkspaces = listOf(
+                WorkspaceShortcutData("Requirements", "$totalReqs", Icons.Default.Description, Color(0xFF8B5CF6), ProjectModule.REQUIREMENTS, Screen.RequirementsList),
+                WorkspaceShortcutData("Use Cases", "${reqs.size}", Icons.Default.AccountTree, Color(0xFF8B5CF6), ProjectModule.USE_CASES, Screen.UseCases),
+                WorkspaceShortcutData("Architecture", "${archs.size}", Icons.Default.Layers, Color(0xFFA78BFA), ProjectModule.ARCHITECTURE, Screen.ArchitectureWorkspace),
+                WorkspaceShortcutData("UML Studio", "6 Diagrams", Icons.Default.Brush, Color(0xFFF472B6), ProjectModule.UML, Screen.UmlStudio),
+                WorkspaceShortcutData("Database ERD", "${dbs.size} Entities", Icons.Default.Storage, Color(0xFFFB923C), ProjectModule.DATABASE, Screen.DatabaseDesigner),
+                WorkspaceShortcutData("API Designer", "${apis.size} Endpoints", Icons.Default.Http, Color(0xFF34D399), ProjectModule.APIS, Screen.ApiDesigner),
+                WorkspaceShortcutData("Dev Tasks", "${tasks.size} Tasks", Icons.Default.Code, Color(0xFF2DD4BF), ProjectModule.DEVELOPMENT_TASKS, Screen.TaskManagement),
+                WorkspaceShortcutData("QA Testing", "$coveragePercent% Cover", Icons.AutoMirrored.Filled.FactCheck, Color(0xFFF59E0B), ProjectModule.TEST_SUITES, Screen.TestingWorkspace),
+                WorkspaceShortcutData("Traceability", "Matrix", Icons.Default.SyncAlt, Color(0xFF8B5CF6), ProjectModule.TRACEABILITY, Screen.TraceabilityMatrix)
+            ).filter { ProjectAccessPolicy.canRead(activeRole, it.module) }
 
-            // Module Navigation Grid
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                WorkspaceShortcutItem(
-                    title = "Requirements",
-                    count = "$totalReqs",
-                    icon = Icons.Default.Description,
-                    color = Color(0xFF8B5CF6),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.navigateTo(Screen.RequirementsList) }
-                )
-                WorkspaceShortcutItem(
-                    title = "Use Cases",
-                    count = "${reqs.size}",
-                    icon = Icons.Default.AccountTree,
-                    color = Color(0xFF8B5CF6),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.navigateTo(Screen.UseCases) }
-                )
-                WorkspaceShortcutItem(
-                    title = "Architecture",
-                    count = "${archs.size}",
-                    icon = Icons.Default.Layers,
-                    color = Color(0xFFA78BFA),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.navigateTo(Screen.ArchitectureWorkspace) }
-                )
-            }
+            if (allWorkspaces.isNotEmpty()) {
+                Text("Engineering Workspaces", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.White)
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                WorkspaceShortcutItem(
-                    title = "UML Studio",
-                    count = "6 Diagrams",
-                    icon = Icons.Default.Brush,
-                    color = Color(0xFFF472B6),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.navigateTo(Screen.UmlStudio) }
-                )
-                WorkspaceShortcutItem(
-                    title = "Database ERD",
-                    count = "${dbs.size} Entities",
-                    icon = Icons.Default.Storage,
-                    color = Color(0xFFFB923C),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.navigateTo(Screen.DatabaseDesigner) }
-                )
-                WorkspaceShortcutItem(
-                    title = "API Designer",
-                    count = "${apis.size} Endpoints",
-                    icon = Icons.Default.Http,
-                    color = Color(0xFF34D399),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.navigateTo(Screen.ApiDesigner) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                WorkspaceShortcutItem(
-                    title = "Dev Tasks",
-                    count = "${tasks.size} Tasks",
-                    icon = Icons.Default.Code,
-                    color = Color(0xFF2DD4BF),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.navigateTo(Screen.TaskManagement) }
-                )
-                WorkspaceShortcutItem(
-                    title = "QA Testing",
-                    count = "$coveragePercent% Cover",
-                    icon = Icons.Default.FactCheck,
-                    color = Color(0xFFF59E0B),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.navigateTo(Screen.TestingWorkspace) }
-                )
-                WorkspaceShortcutItem(
-                    title = "Traceability",
-                    count = "Matrix",
-                    icon = Icons.Default.SyncAlt,
-                    color = Color(0xFF8B5CF6),
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.navigateTo(Screen.TraceabilityMatrix) }
-                )
+                allWorkspaces.chunked(3).forEach { rowItems ->
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        rowItems.forEach { item ->
+                            WorkspaceShortcutItem(
+                                title = item.title,
+                                count = item.count,
+                                icon = item.icon,
+                                color = item.color,
+                                modifier = Modifier.weight(1f),
+                                onClick = { viewModel.navigateTo(item.screen) }
+                            )
+                        }
+                        repeat(3 - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -472,7 +396,7 @@ fun ProjectOverviewScreen(viewModel: MainViewModel) {
                         .clickable { viewModel.navigateTo(Screen.ChangeImpact()) }
                 ) {
                     Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CompareArrows, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
+                        Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text("Impact Analysis", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.White)
@@ -530,7 +454,7 @@ fun ProjectOverviewScreen(viewModel: MainViewModel) {
                         .testTag("overview_generate_test_suite_card")
                 ) {
                     Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.FactCheck, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
+                        Icon(Icons.AutoMirrored.Filled.FactCheck, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text("Generate Tests", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.White)
@@ -550,7 +474,7 @@ fun ProjectOverviewScreen(viewModel: MainViewModel) {
                     title = "Requirements",
                     value = "$totalReqs",
                     subtitle = "$approvedReqs Approved • $underReviewReqs Review",
-                    icon = Icons.Default.Assignment,
+                    icon = Icons.AutoMirrored.Filled.Assignment,
                     color = Color(0xFF8B5CF6),
                     modifier = Modifier.weight(1f),
                     onClick = { viewModel.navigateTo(Screen.RequirementsList) }
@@ -600,7 +524,7 @@ fun ProjectOverviewScreen(viewModel: MainViewModel) {
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color(0xFF8B5CF6), modifier = Modifier.size(16.dp))
+                    Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, tint = Color(0xFF8B5CF6), modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("SRS & Docs", color = Color.White)
                 }
@@ -621,6 +545,15 @@ fun ProjectOverviewScreen(viewModel: MainViewModel) {
         }
     }
 }
+
+private data class WorkspaceShortcutData(
+    val title: String,
+    val count: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val color: Color,
+    val module: ProjectModule,
+    val screen: Screen
+)
 
 @Composable
 fun WorkspaceShortcutItem(

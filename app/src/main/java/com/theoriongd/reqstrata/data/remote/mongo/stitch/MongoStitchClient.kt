@@ -1,4 +1,4 @@
-﻿package com.theoriongd.reqstrata.data.remote.mongo.stitch
+package com.theoriongd.reqstrata.data.remote.mongo.stitch
 
 import com.theoriongd.reqstrata.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,10 +31,10 @@ object MongoStitchClient {
                 }
                 sub.substring(0, end)
             } else {
-                "hellotheoriongd.rbxbuxe.mongodb.net"
+                "cluster0.mongodb.net"
             }
         } catch (e: Exception) {
-            "hellotheoriongd.rbxbuxe.mongodb.net"
+            "cluster0.mongodb.net"
         }
     }
     const val databaseName: String = "requirement2system"

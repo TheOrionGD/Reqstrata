@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.project
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -216,7 +217,7 @@ fun ProjectSelectionScreen(viewModel: MainViewModel) {
                             )
                         }
                         IconButton(onClick = { viewModel.logout() }) {
-                            Icon(Icons.Default.Logout, contentDescription = "Sign Out", tint = Color(0xFFA1A1AA))
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Sign Out", tint = Color(0xFFA1A1AA))
                         }
                     }
                 }
@@ -629,7 +630,7 @@ fun CreateProjectScreen(viewModel: MainViewModel) {
                 title = { Text("Create New Project", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF18181B))

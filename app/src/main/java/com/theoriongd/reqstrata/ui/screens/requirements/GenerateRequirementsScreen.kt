@@ -13,7 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -735,7 +735,7 @@ fun GenerateRequirementsScreen(
                             .weight(1f)
                             .height(48.dp)
                     ) {
-                        Icon(Icons.Default.FactCheck, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                        Icon(Icons.AutoMirrored.Filled.FactCheck, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Generate Test Suite", color = Color(0xFF10B981), style = MaterialTheme.typography.labelSmall)
                     }

@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.testing
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -92,7 +93,7 @@ fun TesterDashboardScreen(viewModel: MainViewModel) {
                         Icon(Icons.Default.SwapHoriz, contentDescription = "Switch Project")
                     }
                     IconButton(onClick = { viewModel.navigateTo(Screen.TestingWorkspace) }) {
-                        Icon(Icons.Default.FactCheck, contentDescription = "Testing Workspace")
+                        Icon(Icons.AutoMirrored.Filled.FactCheck, contentDescription = "Testing Workspace")
                     }
                 }
             )
@@ -166,7 +167,7 @@ fun TesterDashboardScreen(viewModel: MainViewModel) {
                         title = "Test Cases",
                         value = "$totalCases",
                         subtitle = "${suites.size} Test Suite(s)",
-                        icon = Icons.Default.PlaylistAddCheck,
+                        icon = Icons.AutoMirrored.Filled.PlaylistAddCheck,
                         color = PrimaryPurple,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.navigateTo(Screen.TestingWorkspace) }

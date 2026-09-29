@@ -1,4 +1,4 @@
-﻿package com.theoriongd.reqstrata.ui.navigation
+package com.theoriongd.reqstrata.ui.navigation
 
 import com.theoriongd.reqstrata.domain.model.ProjectRole
 import com.theoriongd.reqstrata.ui.Screen
@@ -14,6 +14,7 @@ object AppRoutes {
     const val ONBOARDING = "onboarding"
     const val LOGIN = "login"
     const val REGISTER = "register"
+    const val TENANT_SEPARATION_REGISTER = "tenant_separation_register"
     const val FORGOT_PASSWORD = "forgot_password"
     const val EMAIL_VERIFICATION = "email_verification?email={email}"
     const val RESET_PASSWORD = "reset_password?email={email}"
@@ -114,6 +115,7 @@ object AppRoutes {
             Screen.Onboarding -> ONBOARDING
             Screen.Login -> LOGIN
             Screen.Register -> REGISTER
+            Screen.TenantSeparationRegister -> TENANT_SEPARATION_REGISTER
             Screen.ForgotPassword -> FORGOT_PASSWORD
             is Screen.EmailVerification -> buildEmailVerification(email)
             is Screen.ResetPassword -> buildResetPassword(email)

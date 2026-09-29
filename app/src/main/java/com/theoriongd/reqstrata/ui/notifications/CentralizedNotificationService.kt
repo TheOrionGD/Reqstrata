@@ -1,4 +1,4 @@
-﻿package com.theoriongd.reqstrata.ui.notifications
+package com.theoriongd.reqstrata.ui.notifications
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -66,7 +66,9 @@ object CentralizedNotificationService {
             ).apply {
                 description = CHANNEL_DESC
                 enableVibration(true)
+                enableLights(true)
                 setShowBadge(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             }
             val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
@@ -96,17 +98,9 @@ object CentralizedNotificationService {
                                 showInApp(
                                     title = alertTitle,
                                     message = alertMessage,
-                                    type = NotificationType.SUCCESS
+                                    type = NotificationType.SUCCESS,
+                                    sendToSystem = true
                                 )
-
-                                appContext?.let { ctx ->
-                                    showSystemNotification(
-                                        context = ctx,
-                                        title = alertTitle,
-                                        message = alertMessage,
-                                        notificationId = 1001
-                                    )
-                                }
                             }
                         }
                         RealtimeSyncState.FAILED -> {
@@ -117,17 +111,9 @@ object CentralizedNotificationService {
                                 showInApp(
                                     title = alertTitle,
                                     message = alertMessage,
-                                    type = NotificationType.WARNING
+                                    type = NotificationType.WARNING,
+                                    sendToSystem = true
                                 )
-
-                                appContext?.let { ctx ->
-                                    showSystemNotification(
-                                        context = ctx,
-                                        title = alertTitle,
-                                        message = alertMessage,
-                                        notificationId = 1002
-                                    )
-                                }
                             }
                         }
                         else -> { /* IDLE or SYNCING */ }
@@ -149,16 +135,10 @@ object CentralizedNotificationService {
         projectId: String = "global",
         userId: String? = null
     ) {
-        // 1. Show in-app banner alert
-        showInApp(title, message, type)
+        // 1. Show in-app banner alert and mirror to phone notification center
+        showInApp(title, message, type, sendToSystem = triggerPush)
 
-        // 2. Trigger native Android notification
-        if (triggerPush) {
-            val ctx = context ?: appContext
-            ctx?.let { showSystemNotification(it, title, message) }
-        }
-
-        // 3. Record in repository if available
+        // 2. Record in repository if available
         if (userId != null && notificationRepository != null) {
             serviceScope.launch(Dispatchers.IO) {
                 try {
@@ -180,7 +160,8 @@ object CentralizedNotificationService {
         title: String,
         message: String,
         type: NotificationType = NotificationType.SUCCESS,
-        durationMs: Long = 4500L
+        durationMs: Long = 4500L,
+        sendToSystem: Boolean = true
     ) {
         dismissJob?.cancel()
         _inAppNotification.value = InAppNotificationData(
@@ -189,6 +170,13 @@ object CentralizedNotificationService {
             message = message,
             type = type
         )
+
+        // Mirror in-app notification directly to the mobile phone's notification center
+        if (sendToSystem) {
+            appContext?.let { ctx ->
+                showSystemNotification(ctx, title, message)
+            }
+        }
 
         dismissJob = serviceScope.launch {
             delay(durationMs)
@@ -216,6 +204,7 @@ object CentralizedNotificationService {
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
                 if (!hasPermission) {
+                    Log.w(TAG, "POST_NOTIFICATIONS permission not granted. Skipping system notification.")
                     return
                 }
             }
@@ -235,8 +224,9 @@ object CentralizedNotificationService {
                 .setContentTitle(title)
                 .setContentText(message)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
 

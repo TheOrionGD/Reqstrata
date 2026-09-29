@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.auth
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility

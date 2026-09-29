@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.domain.model
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
@@ -111,12 +112,12 @@ object ProjectAccessPolicy {
                 RoleNavigationItem("Projects", Icons.Default.Folder, Screen.ProjectOverview),
                 RoleNavigationItem("Team", Icons.Default.Group, Screen.TeamManagement),
                 RoleNavigationItem("Approvals", Icons.Default.Verified, Screen.ApprovalCenter),
-                RoleNavigationItem("Requirements", Icons.Default.ListAlt, Screen.RequirementsList),
+                RoleNavigationItem("Requirements", Icons.AutoMirrored.Filled.ListAlt, Screen.RequirementsList),
                 RoleNavigationItem("Architecture", Icons.Default.AccountTree, Screen.ArchitectureWorkspace),
                 RoleNavigationItem("Development", Icons.Default.Task, Screen.TaskManagement),
-                RoleNavigationItem("Testing", Icons.Default.FactCheck, Screen.TestingWorkspace),
+                RoleNavigationItem("Testing", Icons.AutoMirrored.Filled.FactCheck, Screen.TestingWorkspace),
                 RoleNavigationItem("Traceability", Icons.Default.Hub, Screen.TraceabilityMatrix),
-                RoleNavigationItem("Impact Analysis", Icons.Default.CompareArrows, Screen.ChangeImpactDashboard),
+                RoleNavigationItem("Impact Analysis", Icons.AutoMirrored.Filled.CompareArrows, Screen.ChangeImpactDashboard),
                 RoleNavigationItem("Documents", Icons.AutoMirrored.Filled.MenuBook, Screen.DocumentViewer),
                 RoleNavigationItem("Activity Log", Icons.Default.History, Screen.ActivityLog),
                 RoleNavigationItem("Settings", Icons.Default.Settings, Screen.ProjectSettings)
@@ -124,7 +125,7 @@ object ProjectAccessPolicy {
 
             ProjectRole.BUSINESS_ANALYST -> listOf(
                 RoleNavigationItem("Dashboard", Icons.Default.Dashboard, Screen.BusinessAnalystDashboard),
-                RoleNavigationItem("Requirements", Icons.Default.ListAlt, Screen.RequirementsList),
+                RoleNavigationItem("Requirements", Icons.AutoMirrored.Filled.ListAlt, Screen.RequirementsList),
                 RoleNavigationItem("Use Cases", Icons.AutoMirrored.Filled.Assignment, Screen.UseCases),
                 RoleNavigationItem("AI Analysis", Icons.Default.AutoAwesome, Screen.GenerateRequirements()),
                 RoleNavigationItem("Traceability", Icons.Default.Hub, Screen.TraceabilityMatrix),
@@ -135,20 +136,20 @@ object ProjectAccessPolicy {
 
             ProjectRole.ARCHITECT -> listOf(
                 RoleNavigationItem("Dashboard", Icons.Default.Dashboard, Screen.ArchitectDashboard),
-                RoleNavigationItem("Requirements", Icons.Default.ListAlt, Screen.RequirementsList),
+                RoleNavigationItem("Requirements", Icons.AutoMirrored.Filled.ListAlt, Screen.RequirementsList),
                 RoleNavigationItem("Architecture", Icons.Default.AccountTree, Screen.ArchitectureWorkspace),
                 RoleNavigationItem("UML Studio", Icons.Default.Schema, Screen.UmlStudio),
                 RoleNavigationItem("Database", Icons.Default.Storage, Screen.DatabaseDesigner),
                 RoleNavigationItem("APIs", Icons.Default.Api, Screen.ApiDesigner),
                 RoleNavigationItem("Traceability", Icons.Default.Hub, Screen.TraceabilityMatrix),
-                RoleNavigationItem("Impact Analysis", Icons.Default.CompareArrows, Screen.ChangeImpactDashboard),
+                RoleNavigationItem("Impact Analysis", Icons.AutoMirrored.Filled.CompareArrows, Screen.ChangeImpactDashboard),
                 RoleNavigationItem("Documents", Icons.AutoMirrored.Filled.MenuBook, Screen.DocumentViewer),
                 RoleNavigationItem("Profile", Icons.Default.Person, Screen.Profile)
             )
 
             ProjectRole.DEVELOPER -> listOf(
                 RoleNavigationItem("Dashboard", Icons.Default.Dashboard, Screen.DeveloperDashboard),
-                RoleNavigationItem("Requirements", Icons.Default.ListAlt, Screen.RequirementsList),
+                RoleNavigationItem("Requirements", Icons.AutoMirrored.Filled.ListAlt, Screen.RequirementsList),
                 RoleNavigationItem("Architecture", Icons.Default.AccountTree, Screen.ArchitectureWorkspace),
                 RoleNavigationItem("Database", Icons.Default.Storage, Screen.DatabaseDesigner),
                 RoleNavigationItem("APIs", Icons.Default.Api, Screen.ApiDesigner),
@@ -161,13 +162,13 @@ object ProjectAccessPolicy {
 
             ProjectRole.TESTER -> listOf(
                 RoleNavigationItem("Dashboard", Icons.Default.Dashboard, Screen.TesterDashboard),
-                RoleNavigationItem("Requirements", Icons.Default.ListAlt, Screen.RequirementsList),
-                RoleNavigationItem("Test Suites", Icons.Default.FactCheck, Screen.TestingWorkspace),
-                RoleNavigationItem("Test Cases", Icons.Default.PlaylistAddCheck, Screen.TestingWorkspace),
+                RoleNavigationItem("Requirements", Icons.AutoMirrored.Filled.ListAlt, Screen.RequirementsList),
+                RoleNavigationItem("Test Suites", Icons.AutoMirrored.Filled.FactCheck, Screen.TestingWorkspace),
+                RoleNavigationItem("Test Cases", Icons.AutoMirrored.Filled.PlaylistAddCheck, Screen.TestingWorkspace),
                 RoleNavigationItem("Execution", Icons.Default.PlayCircle, Screen.TestExecutionWorkspace),
                 RoleNavigationItem("Coverage", Icons.Default.PieChart, Screen.CoverageDashboard),
                 RoleNavigationItem("Traceability", Icons.Default.Hub, Screen.TraceabilityMatrix),
-                RoleNavigationItem("Impact Analysis", Icons.Default.CompareArrows, Screen.ChangeImpactDashboard),
+                RoleNavigationItem("Impact Analysis", Icons.AutoMirrored.Filled.CompareArrows, Screen.ChangeImpactDashboard),
                 RoleNavigationItem("Reports", Icons.AutoMirrored.Filled.MenuBook, Screen.DocumentViewer),
                 RoleNavigationItem("Profile", Icons.Default.Person, Screen.Profile)
             )

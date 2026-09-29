@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.ai
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -172,7 +173,7 @@ fun DeveloperAIAssistantScreen(viewModel: MainViewModel) {
                                 }
                             },
                             label = { Text(selectedReq?.let { "${it.code}: ${it.title.take(15)}..." } ?: "Requirement") },
-                            leadingIcon = { Icon(Icons.Default.ListAlt, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ListAlt, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         )
                     }
                     item {

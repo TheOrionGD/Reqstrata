@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.requirements
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background

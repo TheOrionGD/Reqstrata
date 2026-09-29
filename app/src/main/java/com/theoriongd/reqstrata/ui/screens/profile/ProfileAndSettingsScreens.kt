@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.profile
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -35,7 +36,6 @@ import com.theoriongd.reqstrata.ui.theme.*
 fun ProfileScreen(viewModel: MainViewModel) {
     val user by viewModel.currentUser.collectAsState()
     val activeRole by viewModel.currentRole.collectAsState()
-    val activeAccounts by viewModel.activeDatabaseAccounts.collectAsState()
     val scrollState = rememberScrollState()
 
     Scaffold(
@@ -44,7 +44,7 @@ fun ProfileScreen(viewModel: MainViewModel) {
                 title = { Text("User Profile & Role Identity", color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = {
@@ -67,18 +67,17 @@ fun ProfileScreen(viewModel: MainViewModel) {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             user?.let { u ->
-                // User Avatar and Primary Details
+                // User Profile Icon (Matching App Logo)
                 Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .background(Color(u.avatarColor), CircleShape),
+                    modifier = Modifier.size(88.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = u.fullName.take(1).uppercase(),
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(id = com.theoriongd.reqstrata.R.drawable.ic_app_logo),
+                        contentDescription = "Profile Icon",
+                        modifier = Modifier
+                            .size(88.dp)
+                            .clip(CircleShape)
                     )
                 }
 
@@ -128,88 +127,12 @@ fun ProfileScreen(viewModel: MainViewModel) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Organization / Tenant: ${u.tenantName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
                         Text("Tenant ID: ${u.tenantId}", style = MaterialTheme.typography.bodySmall, color = PrimaryLight)
-                        Text("Data Boundary: Independent Room SQLite & MongoDB Collections", style = MaterialTheme.typography.bodySmall, color = Color(0xFF34D399))
+                        Text("Data Boundary: Encrypted Local Workspace Isolation", style = MaterialTheme.typography.bodySmall, color = Color(0xFF34D399))
                         Text("Cross-Tenant Access: Strictly Denied & Isolated", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
-                // Active Account & User Separation Switcher
-                MotionExpandableCard(
-                    title = "Switch Active Account / Role (${activeAccounts.size})",
-                    icon = Icons.Default.SwitchAccount
-                ) {
-                    Text(
-                        text = "Reqstrata maintains isolated user accounts across roles. Switch accounts to experience the system through different engineering perspectives:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    activeAccounts.forEach { account ->
-                        val isCurrent = account.id == u.id
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                                .pressScale()
-                                .clickable { viewModel.loginWithActiveAccount(account) },
-                            color = if (isCurrent) Color(0xFF6D28D9).copy(alpha = 0.25f) else Color(0xFF18181B),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isCurrent) Color(0xFF6D28D9) else Color(0xFF3F3F46)
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(34.dp)
-                                        .background(Color(account.avatarColor), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = account.fullName.take(1),
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = account.fullName,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                    Text(
-                                        text = "${account.titleOrRole} • ${account.email}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFFA1A1AA)
-                                    )
-                                }
-                                if (isCurrent) {
-                                    Surface(
-                                        color = Color(0xFF10B981).copy(alpha = 0.2f),
-                                        shape = RoundedCornerShape(4.dp)
-                                    ) {
-                                        Text(
-                                            text = "ACTIVE",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF34D399),
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Current Permissions & Role Authority Matrix
+                 // Current Permissions & Role Authority Matrix
                 MotionExpandableCard(
                     title = "Role Permissions: ${activeRole.title}",
                     icon = Icons.Default.Shield
@@ -220,7 +143,7 @@ fun ProfileScreen(viewModel: MainViewModel) {
                             "Invite & Manage Team Member Access" to true,
                             "Final Approval Authority for Requirements" to true,
                             "Architecture & Design Studio Authoring" to true,
-                            "Direct MongoDB Atlas Real-Time Push" to true
+                            "Cloud & Local Data Synchronization" to true
                         )
                         ProjectRole.BUSINESS_ANALYST -> listOf(
                             "Requirements Specification & Version Authoring" to true,
@@ -311,7 +234,7 @@ fun ProfileScreen(viewModel: MainViewModel) {
                         .pressScale()
                         .testTag("logout_button")
                 ) {
-                    Icon(Icons.Default.Logout, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Sign Out")
                 }
@@ -323,9 +246,14 @@ fun ProfileScreen(viewModel: MainViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: MainViewModel) {
+    val scrollState = rememberScrollState()
     var notificationsEnabled by remember { mutableStateOf(true) }
     var aiAutoSaveEnabled by remember { mutableStateOf(false) }
     var highDetailAnalysis by remember { mutableStateOf(true) }
+    var highContrastMode by remember { mutableStateOf(false) }
+    var largeTouchTargets by remember { mutableStateOf(false) }
+    var selectedAnimationPreset by remember { mutableStateOf("Normal (250ms)") }
+    var selectedTextScale by remember { mutableStateOf("Standard (100%)") }
 
     Scaffold(
         topBar = {
@@ -333,7 +261,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 title = { Text("Settings & Preferences", color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -346,6 +274,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
+                .verticalScroll(scrollState)
         ) {
             SectionHeader(title = "AI Preferences")
 
@@ -449,12 +378,66 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     Text("Accent Color Palette", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    // Dynamic Wallpaper Accent Option
+                    val isDynamicActive = dynamicColors && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
+                    Surface(
+                        color = if (isDynamicActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(8.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            if (isDynamicActive) 2.dp else 1.dp,
+                            if (isDynamicActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp)
+                            .clickable { viewModel.setDynamicColors(true) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Dynamic Wallpaper Accent",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (isDynamicActive) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isDynamicActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (isDynamicActive) "Currently Active • Synchronized with Android OS Wallpaper" else "Tap to sync theme with phone wallpaper",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (isDynamicActive) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = "Active",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Text("Preset Engineering Palettes", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(6.dp))
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         AppColorPalette.entries.forEach { palette ->
-                            val isSelected = currentPalette == palette
+                            val isSelected = !dynamicColors && currentPalette == palette
                             Surface(
                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                                 shape = RoundedCornerShape(8.dp),
@@ -492,51 +475,6 @@ fun SettingsScreen(viewModel: MainViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            SectionHeader(title = "MongoDB Atlas Cloud Database")
-
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(10.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text(
-                        text = "URI: mongodb+srv://...hellotheoriongd.rbxbuxe.mongodb.net",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                        color = Color(0xFF10B981)
-                    )
-                    Text(
-                        text = "Authenticated User: godfreytrprof_db_user | Database: requirement2system",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            onClick = { viewModel.syncCurrentProjectToMongo() },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
-                            modifier = Modifier
-                                .weight(1f)
-                                .pressScale()
-                        ) {
-                            Text("Sync All Artifacts", style = MaterialTheme.typography.labelMedium)
-                        }
-                        OutlinedButton(
-                            onClick = { viewModel.pingMongoCluster() },
-                            modifier = Modifier
-                                .weight(1f)
-                                .pressScale()
-                        ) {
-                            Text("Ping Cluster", style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             SectionHeader(title = "Motion & Accessibility")
 
             val reduceMotion by viewModel.reduceMotion.collectAsState()
@@ -555,7 +493,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Reduce Motion", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                            Text("Disables non-essential slide and scale transitions for accessibility", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Disables non-essential slide and scale transitions for vestibular accessibility", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(
                             checked = reduceMotion,
@@ -573,13 +511,93 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Interactive Tactile Feedback", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                            Text("Short spring compression on cards and actionable elements", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Spring compression physics on cards, buttons, and actionable items", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(
                             checked = tactileFeedback,
                             onCheckedChange = { viewModel.setTactileFeedback(it) },
                             modifier = Modifier.testTag("settings_tactile_feedback_switch")
                         )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("High Contrast Borders", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Strengthens boundary definition around interactive cards and text fields", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = highContrastMode,
+                            onCheckedChange = { highContrastMode = it },
+                            modifier = Modifier.testTag("settings_high_contrast_switch")
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Large Touch Targets", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Enforces 48dp minimum hit targets for improved motor accessibility", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = largeTouchTargets,
+                            onCheckedChange = { largeTouchTargets = it },
+                            modifier = Modifier.testTag("settings_large_touch_targets_switch")
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 10.dp))
+
+                    Text("Animation Speed Scale", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("Fast (150ms)", "Normal (250ms)", "Relaxed (400ms)").forEach { preset ->
+                            val isSelected = selectedAnimationPreset == preset
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { selectedAnimationPreset = preset },
+                                label = { Text(preset, style = MaterialTheme.typography.labelSmall) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text("Text Readability Scaling", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("Standard (100%)", "Large (115%)", "Extra Large (130%)").forEach { scale ->
+                            val isSelected = selectedTextScale == scale
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { selectedTextScale = scale },
+                                label = { Text(scale, style = MaterialTheme.typography.labelSmall) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
                     }
                 }
             }

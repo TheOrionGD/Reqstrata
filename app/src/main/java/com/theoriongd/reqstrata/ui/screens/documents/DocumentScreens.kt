@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.documents
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -208,7 +209,7 @@ fun DocumentViewerScreen(viewModel: MainViewModel) {
                         onClick = { viewModel.navigateBack() },
                         modifier = Modifier.pressScale()
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 actions = {

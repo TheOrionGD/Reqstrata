@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.team
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -47,7 +48,7 @@ fun TeamManagementScreen(viewModel: MainViewModel) {
                 title = { Text("Team & Role Governance", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 actions = {
@@ -269,7 +270,7 @@ fun NotificationsScreen(viewModel: MainViewModel) {
                 title = { Text("Notifications", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 actions = {
@@ -366,7 +367,7 @@ fun ActivityLogScreen(viewModel: MainViewModel) {
                 title = { Text("Activity Audit Log", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF18181B))
@@ -445,7 +446,7 @@ fun GlobalSearchScreen(viewModel: MainViewModel) {
                 title = { Text("Global Project Search", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF18181B))

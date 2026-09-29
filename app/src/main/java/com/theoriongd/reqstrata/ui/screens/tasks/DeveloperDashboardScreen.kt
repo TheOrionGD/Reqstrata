@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.tasks
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -163,7 +164,7 @@ fun DeveloperDashboardScreen(viewModel: MainViewModel) {
                         title = "In Progress",
                         value = "$inProgressTasks",
                         subtitle = "Active sprint tasks",
-                        icon = Icons.Default.DirectionsRun,
+                        icon = Icons.AutoMirrored.Filled.DirectionsRun,
                         color = PrimaryPurple,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.navigateTo(Screen.TaskManagement) }

@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.auth
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
@@ -36,6 +37,7 @@ import com.theoriongd.reqstrata.ui.MainViewModel
 import com.theoriongd.reqstrata.ui.Screen
 import com.theoriongd.reqstrata.ui.theme.*
 import com.theoriongd.reqstrata.ui.components.background.MobiusSpaceBackground
+import com.theoriongd.reqstrata.ui.components.mobius.MobiusRibbonHeroVisual
 import kotlinx.coroutines.launch
 
 @Composable
@@ -66,7 +68,8 @@ fun OnboardingScreen(viewModel: MainViewModel) {
             modifier = Modifier.fillMaxSize(),
             particleCount = 180,
             rotationSpeed = 0.9f,
-            intensity = 0.65f
+            intensity = 0.65f,
+            showRibbon = false
         )
         Column(
             modifier = Modifier
@@ -78,24 +81,15 @@ fun OnboardingScreen(viewModel: MainViewModel) {
         Spacer(modifier = Modifier.height(32.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         ) {
-            Box(
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(id = com.theoriongd.reqstrata.R.drawable.ic_app_logo),
+                contentDescription = "Reqstrata Logo",
                 modifier = Modifier
-                    .size(42.dp)
-                    .background(
-                        Brush.linearGradient(listOf(PrimaryViolet, PrimaryLight)),
-                        RoundedCornerShape(10.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Hub,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
@@ -123,24 +117,29 @@ fun OnboardingScreen(viewModel: MainViewModel) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                // Production 3D Futuristic Digital Möbius Ribbon Hero Visual
                 Box(
                     modifier = Modifier
-                        .size(110.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .padding(horizontal = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = PrimaryLight,
-                        modifier = Modifier.size(54.dp)
+                    MobiusRibbonHeroVisual(
+                        modifier = Modifier
+                            .fillMaxWidth(0.96f)
+                            .aspectRatio(1.18f)
+                            .heightIn(max = 330.dp),
+                        pageIndex = pageIndex,
+                        badgeIcon = icon
                     )
                 }
-                Spacer(modifier = Modifier.height(32.dp))
+
+                Spacer(modifier = Modifier.height(20.dp))
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineMedium,
@@ -148,7 +147,7 @@ fun OnboardingScreen(viewModel: MainViewModel) {
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyLarge,
@@ -218,7 +217,7 @@ fun OnboardingScreen(viewModel: MainViewModel) {
                 ) {
                     Text("Next")
                     Spacer(modifier = Modifier.width(6.dp))
-                    Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
                 }
             } else {
                 Button(
@@ -379,99 +378,7 @@ fun LoginScreen(viewModel: MainViewModel) {
             Text("Sign In (Database Auth)", fontWeight = FontWeight.Bold)
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // --- Active Database Accounts (Instant Role-Based Access) ---
-        val activeAccounts by viewModel.activeDatabaseAccounts.collectAsState()
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(14.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Active Database Accounts",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Enterprise Auth • Direct Role-Based Screen Access",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = SuccessEmerald
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .background(SuccessEmerald, CircleShape)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                activeAccounts.forEach { account ->
-                    Surface(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 3.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .pressScale {
-                                viewModel.loginWithActiveAccount(account)
-                            }
-                            .testTag("quick_role_account_${account.email}")
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .background(Color(account.avatarColor), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = account.fullName.take(1),
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = account.fullName,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "${account.titleOrRole} • ${account.email}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.ChevronRight,
-                                contentDescription = "Enter role screen",
-                                tint = PrimaryLight,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        Spacer(modifier = Modifier.height(20.dp))
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -495,28 +402,68 @@ fun RegisterScreen(viewModel: MainViewModel) {
     val errorMessage by viewModel.errorMessage.collectAsState()
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        MobiusSpaceBackground(
+            modifier = Modifier.fillMaxSize(),
+            particleCount = 140,
+            rotationSpeed = 0.85f,
+            intensity = 0.55f
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
         Text(
-            text = "Create Account",
+            text = "Project Owner Registration",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
         Text(
-            text = "Join Reqstrata collaborative platform",
+            text = "Create an autonomous workspace as Project Owner & Administrator",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Role Policy & Hierarchy Notice Banner
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.AdminPanelSettings,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Role: Project Owner / Administrator (Tier 1)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Public registration is strictly for Project Owners / Workspace Administrators. Other roles (Architects, Business Analysts, Developers, and Testers) are provisioned through the workspace team hierarchy by authorized leads.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         AnimatedVisibility(
             visible = errorMessage != null,
@@ -658,13 +605,38 @@ fun RegisterScreen(viewModel: MainViewModel) {
                 .pressScale()
                 .testTag("register_submit_button")
         ) {
-            Text("Create Account", fontWeight = FontWeight.Bold)
+            Text("Register as Project Owner & Admin", fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Invited by a lead as an Architect, BA, Developer, or Tester?",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextButton(
+                    onClick = { viewModel.navigateTo(Screen.Login) },
+                    modifier = Modifier.pressScale()
+                ) {
+                    Text("Sign In with Provisioned Credentials", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Already registered?", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Already registered as Owner?", color = MaterialTheme.colorScheme.onSurfaceVariant)
             TextButton(
                 onClick = { viewModel.navigateTo(Screen.Login) },
                 modifier = Modifier.pressScale()
@@ -672,7 +644,95 @@ fun RegisterScreen(viewModel: MainViewModel) {
                 Text("Sign In", color = PrimaryLight, fontWeight = FontWeight.Bold)
             }
         }
+
+        Spacer(modifier = Modifier.height(20.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Enterprise Tenant Separation Request Card
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            shape = RoundedCornerShape(14.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryLight.copy(alpha = 0.4f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .pressScale(pressedScale = 0.99f)
+                .testTag("tenant_separation_request_card")
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(PrimaryLight.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Security,
+                            contentDescription = null,
+                            tint = PrimaryLight,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Need Dedicated Tenant Separation?",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Enterprise Workspace & User Provisioning",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SuccessEmerald,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Request a dedicated tenant workspace partition with isolated database boundaries, custom organization policies, and pre-provisioned team member accounts.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+                Button(
+                    onClick = { viewModel.navigateTo(Screen.TenantSeparationRegister) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryLight.copy(alpha = 0.18f),
+                        contentColor = PrimaryLight
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryLight.copy(alpha = 0.7f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .pressScale()
+                        .testTag("open_tenant_separation_register_btn")
+                ) {
+                    Icon(
+                        Icons.Default.GroupAdd,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Register Tenant Separation & Provision Users",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            }
+        }
     }
+    } // end Box
 }
 
 @Composable
@@ -681,14 +741,20 @@ fun ForgotPasswordScreen(viewModel: MainViewModel) {
     var newPassword by remember { mutableStateOf("") }
     var resetSuccess by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        MobiusSpaceBackground(
+            modifier = Modifier.fillMaxSize(),
+            particleCount = 130,
+            rotationSpeed = 0.8f,
+            intensity = 0.5f
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
         Icon(Icons.Default.LockReset, contentDescription = null, tint = PrimaryLight, modifier = Modifier.size(56.dp))
         Spacer(modifier = Modifier.height(16.dp))
         Text("Reset Password", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
@@ -785,4 +851,5 @@ fun ForgotPasswordScreen(viewModel: MainViewModel) {
             Text("Return to Sign In", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+    } // end Box
 }

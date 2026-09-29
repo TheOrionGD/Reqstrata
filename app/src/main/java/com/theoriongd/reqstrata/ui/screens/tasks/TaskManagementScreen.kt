@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.tasks
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -51,7 +52,7 @@ fun TaskManagementScreen(viewModel: MainViewModel) {
                 title = { Text("Developer Task Workspace", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 actions = {

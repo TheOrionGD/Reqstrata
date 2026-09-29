@@ -1,4 +1,4 @@
-﻿package com.theoriongd.reqstrata.ui.theme
+package com.theoriongd.reqstrata.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.background
@@ -291,8 +291,52 @@ fun ThemeSelectionDialog(
                 // Color Palette Chooser
                 Text("Accent Color Palette", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Dynamic Wallpaper Accent Option
+                    val isDynamicSelected = dynamicColors && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
+                    Surface(
+                        color = if (isDynamicSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp),
+                        border = if (isDynamicSelected) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setDynamicColors(true) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        "Dynamic Wallpaper Accent",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (isDynamicSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                    Text(
+                                        "Synchronized with Android OS Wallpaper",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            if (isDynamicSelected) {
+                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+
                     AppColorPalette.entries.forEach { palette ->
-                        val isSelected = currentPalette == palette
+                        val isSelected = !dynamicColors && currentPalette == palette
                         Surface(
                             color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                             shape = RoundedCornerShape(8.dp),

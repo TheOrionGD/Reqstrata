@@ -10,7 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -228,7 +228,7 @@ fun BusinessAnalystDashboardScreen(viewModel: MainViewModel) {
                         title = "Non-Testable",
                         value = "${nonTestableReqs.size}",
                         subtitle = "Missing criteria",
-                        icon = Icons.Default.Rule,
+                        icon = Icons.AutoMirrored.Filled.Rule,
                         color = Color(0xFFA855F7),
                         modifier = Modifier.weight(1f),
                         onClick = { selectedFilter = "NON_TESTABLE" }

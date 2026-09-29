@@ -1,4 +1,4 @@
-﻿package com.theoriongd.reqstrata.data.remote.mongo
+package com.theoriongd.reqstrata.data.remote.mongo
 
 import android.util.Log
 import com.theoriongd.reqstrata.data.local.entity.*
@@ -51,10 +51,10 @@ object MongoDbService {
             }
             sub.substring(0, end)
         } else {
-            "hellotheoriongd.rbxbuxe.mongodb.net"
+            "cluster0.mongodb.net"
         }
     } catch (e: Exception) {
-        "hellotheoriongd.rbxbuxe.mongodb.net"
+        "cluster0.mongodb.net"
     }
     const val DATABASE_NAME = "requirement2system"
 

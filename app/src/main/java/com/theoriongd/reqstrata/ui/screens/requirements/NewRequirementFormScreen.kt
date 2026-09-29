@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.requirements
+import androidx.compose.material.icons.automirrored.filled.*
 
 import android.Manifest
 import android.app.Activity

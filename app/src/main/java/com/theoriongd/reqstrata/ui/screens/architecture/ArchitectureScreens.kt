@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.architecture
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -60,12 +61,12 @@ fun ArchitectureWorkspaceScreen(viewModel: MainViewModel) {
                 title = { Text("System Architecture Workspace", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.navigateTo(Screen.ArchitectureDecisions) }) {
-                        Icon(Icons.Default.MenuBook, contentDescription = "Architecture Decision Records", tint = Color(0xFFF59E0B))
+                        Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = "Architecture Decision Records", tint = Color(0xFFF59E0B))
                     }
                     IconButton(onClick = { viewModel.navigateTo(Screen.SuggestArchitecture(project?.id)) }) {
                         Icon(Icons.Default.AutoAwesome, contentDescription = "Suggest Architecture", tint = Color(0xFF8B5CF6))
@@ -412,7 +413,7 @@ fun UmlStudioScreen(viewModel: MainViewModel) {
                 title = { Text("UML Studio", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 actions = {

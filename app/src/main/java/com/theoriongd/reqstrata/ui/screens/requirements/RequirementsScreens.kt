@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.requirements
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -114,7 +115,7 @@ fun RequirementsListScreen(viewModel: MainViewModel) {
                         onClick = { viewModel.navigateTo(Screen.GenerateTestSuite(project?.id)) },
                         modifier = Modifier.testTag("requirements_generate_tests_btn")
                     ) {
-                        Icon(Icons.Default.FactCheck, contentDescription = "Generate Test Suite", tint = Color(0xFF10B981))
+                        Icon(Icons.AutoMirrored.Filled.FactCheck, contentDescription = "Generate Test Suite", tint = Color(0xFF10B981))
                     }
                     IconButton(onClick = { viewModel.navigateTo(Screen.CreateEditRequirement()) }) {
                         Icon(Icons.Default.Add, contentDescription = "Add Requirement", tint = MaterialTheme.colorScheme.onSurface)
@@ -359,7 +360,7 @@ fun CreateEditRequirementScreen(
                 title = { Text(if (isEditMode) "Edit Requirement (${existingReq?.code})" else "Author Requirement", color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -669,7 +670,7 @@ fun RequirementDetailScreen(
                 title = { Text(req?.code ?: "Requirement Detail", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 actions = {
@@ -683,7 +684,7 @@ fun RequirementDetailScreen(
                         Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF8B5CF6))
                     }
                     IconButton(onClick = { viewModel.navigateTo(Screen.ChangeImpact(reqId)) }) {
-                        Icon(Icons.Default.CompareArrows, contentDescription = "Change Impact Analysis", tint = Color(0xFFEF4444))
+                        Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = "Change Impact Analysis", tint = Color(0xFFEF4444))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -886,7 +887,7 @@ fun RequirementDetailScreen(
                                 ) {
                                     SectionHeader(title = "Version History (${versions.size})")
                                     TextButton(onClick = { viewModel.navigateTo(Screen.RequirementComparison(r.id)) }) {
-                                        Icon(Icons.Default.CompareArrows, contentDescription = null, tint = Color(0xFF8B5CF6), modifier = Modifier.size(16.dp))
+                                        Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, tint = Color(0xFF8B5CF6), modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text("Compare Diff", color = Color(0xFF8B5CF6), style = MaterialTheme.typography.labelMedium)
                                     }
@@ -1101,7 +1102,7 @@ fun UseCasesScreen(viewModel: MainViewModel) {
                 title = { Text("Use Cases Repository", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = {

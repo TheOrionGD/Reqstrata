@@ -1,5 +1,9 @@
 package com.theoriongd.reqstrata.ui.navigation
+import androidx.compose.material.icons.automirrored.filled.*
 
+import androidx.compose.material.icons.automirrored.filled.Rule
+import androidx.compose.material.icons.automirrored.filled.FactCheck
+import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -76,7 +80,7 @@ object DynamicNavGraphBuilder {
 
             ProjectRole.BUSINESS_ANALYST -> listOf(
                 AuthorizedNavDestination(AppRoutes.BA_DASHBOARD, "BA Hub", Icons.Default.Analytics, Screen.BusinessAnalystDashboard, true),
-                AuthorizedNavDestination(AppRoutes.REQUIREMENTS_LIST, "Reqs", Icons.Default.ListAlt, Screen.RequirementsList, true),
+                AuthorizedNavDestination(AppRoutes.REQUIREMENTS_LIST, "Reqs", Icons.AutoMirrored.Filled.ListAlt, Screen.RequirementsList, true),
                 AuthorizedNavDestination(AppRoutes.NEW_REQUIREMENT_FORM, "New Spec", Icons.Default.PostAdd, Screen.NewRequirementForm, true),
                 AuthorizedNavDestination(AppRoutes.USE_CASES, "Use Cases", Icons.Default.AccountTree, Screen.UseCases, true),
                 AuthorizedNavDestination(AppRoutes.GENERATE_REQUIREMENTS, "AI Gen", Icons.Default.AutoAwesome, Screen.GenerateRequirements(), true)
@@ -99,8 +103,8 @@ object DynamicNavGraphBuilder {
             )
 
             ProjectRole.TESTER -> listOf(
-                AuthorizedNavDestination(AppRoutes.TESTER_DASHBOARD, "QA Hub", Icons.Default.FactCheck, Screen.TesterDashboard, true),
-                AuthorizedNavDestination(AppRoutes.TESTING_WORKSPACE, "Suites", Icons.Default.Rule, Screen.TestingWorkspace, true),
+                AuthorizedNavDestination(AppRoutes.TESTER_DASHBOARD, "QA Hub", Icons.AutoMirrored.Filled.FactCheck, Screen.TesterDashboard, true),
+                AuthorizedNavDestination(AppRoutes.TESTING_WORKSPACE, "Suites", Icons.AutoMirrored.Filled.Rule, Screen.TestingWorkspace, true),
                 AuthorizedNavDestination(AppRoutes.TEST_EXECUTION_WORKSPACE, "Execute", Icons.Default.PlayCircle, Screen.TestExecutionWorkspace, true),
                 AuthorizedNavDestination(AppRoutes.COVERAGE_DASHBOARD, "Coverage", Icons.Default.PieChart, Screen.CoverageDashboard, true),
                 AuthorizedNavDestination(AppRoutes.TRACEABILITY_MATRIX, "Matrix", Icons.Default.Polyline, Screen.TraceabilityMatrix, true)
@@ -123,6 +127,7 @@ object DynamicNavGraphBuilder {
             composable(AppRoutes.ONBOARDING) { OnboardingScreen(viewModel = viewModel) }
             composable(AppRoutes.LOGIN) { LoginScreen(viewModel = viewModel) }
             composable(AppRoutes.REGISTER) { RegisterScreen(viewModel = viewModel) }
+            composable(AppRoutes.TENANT_SEPARATION_REGISTER) { TenantSeparationRegisterScreen(viewModel = viewModel) }
             composable(AppRoutes.FORGOT_PASSWORD) { ForgotPasswordScreen(viewModel = viewModel) }
             composable(
                 route = AppRoutes.EMAIL_VERIFICATION,
@@ -142,7 +147,14 @@ object DynamicNavGraphBuilder {
                 MainDashboardProjectsScreen(viewModel = viewModel)
             }
             composable(AppRoutes.PROJECT_DASHBOARD) {
-                ProjectDashboardScreen(viewModel = viewModel)
+                val activeRole by viewModel.currentRole.collectAsState()
+                when (activeRole) {
+                    ProjectRole.ADMIN -> AdminDashboardScreen(viewModel = viewModel)
+                    ProjectRole.BUSINESS_ANALYST -> BusinessAnalystDashboardScreen(viewModel = viewModel)
+                    ProjectRole.ARCHITECT -> ArchitectDashboardScreen(viewModel = viewModel)
+                    ProjectRole.DEVELOPER -> DeveloperDashboardScreen(viewModel = viewModel)
+                    ProjectRole.TESTER -> TesterDashboardScreen(viewModel = viewModel)
+                }
             }
             composable(AppRoutes.PROJECT_OVERVIEW) {
                 ProjectOverviewScreen(viewModel = viewModel)
@@ -153,61 +165,99 @@ object DynamicNavGraphBuilder {
                 RequirementSystemDesignChatScreen(viewModel = viewModel)
             }
 
-            // Role-Guarded Destinations: Registered only when role holds authorization
-            if (activeRole == ProjectRole.ADMIN) {
-                composable(
-                    route = AppRoutes.CREATE_PROJECT,
-                    enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
-                    exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() },
-                    popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
-                    popExitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() }
-                ) { CreateProjectScreen(viewModel = viewModel) }
-                composable(AppRoutes.ADMIN_DASHBOARD) { AdminDashboardScreen(viewModel = viewModel) }
-                composable(AppRoutes.PROJECT_SETTINGS) { ProjectSettingsScreen(viewModel = viewModel) }
-                composable(
-                    route = AppRoutes.INVITE_MEMBER,
-                    enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
-                    exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() },
-                    popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
-                    popExitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() }
-                ) { InviteMemberScreen(viewModel = viewModel) }
-                composable(AppRoutes.ROLE_MANAGEMENT) { RoleManagementScreen(viewModel = viewModel) }
+            // Role-Guarded Destinations: Always registered in NavGraph to prevent crashes, guarded by AuthorizedRoute
+            composable(
+                route = AppRoutes.CREATE_PROJECT,
+                enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
+                exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() },
+                popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
+                popExitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() }
+            ) {
+                AuthorizedRoute(requiredRoles = setOf(ProjectRole.ADMIN), viewModel = viewModel, routeTitle = "Create New Project") {
+                    CreateProjectScreen(viewModel = viewModel)
+                }
+            }
+            composable(AppRoutes.ADMIN_DASHBOARD) {
+                AuthorizedRoute(requiredRoles = setOf(ProjectRole.ADMIN), viewModel = viewModel, routeTitle = "Executive Administration Dashboard") {
+                    AdminDashboardScreen(viewModel = viewModel)
+                }
+            }
+            composable(AppRoutes.PROJECT_SETTINGS) {
+                AuthorizedRoute(requiredRoles = setOf(ProjectRole.ADMIN), viewModel = viewModel, routeTitle = "Project Settings & Governance") {
+                    ProjectSettingsScreen(viewModel = viewModel)
+                }
+            }
+            composable(
+                route = AppRoutes.INVITE_MEMBER,
+                enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
+                exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() },
+                popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
+                popExitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() }
+            ) {
+                AuthorizedRoute(
+                    requiredRoles = setOf(ProjectRole.ADMIN, ProjectRole.ARCHITECT, ProjectRole.BUSINESS_ANALYST),
+                    viewModel = viewModel,
+                    routeTitle = "Hierarchical User Provisioning"
+                ) {
+                    InviteMemberScreen(viewModel = viewModel)
+                }
+            }
+            composable(AppRoutes.ROLE_MANAGEMENT) {
+                AuthorizedRoute(requiredRoles = setOf(ProjectRole.ADMIN), viewModel = viewModel, routeTitle = "Role Permissions & Authority Matrix") {
+                    RoleManagementScreen(viewModel = viewModel)
+                }
             }
 
-            if (activeRole in setOf(ProjectRole.ADMIN, ProjectRole.BUSINESS_ANALYST, ProjectRole.ARCHITECT)) {
-                composable(AppRoutes.APPROVAL_CENTER) { ApprovalCenterScreen(viewModel = viewModel) }
+            composable(AppRoutes.APPROVAL_CENTER) {
+                AuthorizedRoute(requiredRoles = setOf(ProjectRole.ADMIN, ProjectRole.BUSINESS_ANALYST, ProjectRole.ARCHITECT), viewModel = viewModel, routeTitle = "Requirements Approval Center") {
+                    ApprovalCenterScreen(viewModel = viewModel)
+                }
             }
 
-            if (activeRole in setOf(ProjectRole.ADMIN, ProjectRole.BUSINESS_ANALYST)) {
-                composable(AppRoutes.BA_DASHBOARD) { BusinessAnalystDashboardScreen(viewModel = viewModel) }
-                composable(
-                    route = AppRoutes.NEW_REQUIREMENT_FORM,
-                    enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
-                    exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() },
-                    popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
-                    popExitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() }
-                ) { NewRequirementFormScreen(viewModel = viewModel) }
-                composable(
-                    route = AppRoutes.CREATE_EDIT_REQUIREMENT,
-                    arguments = listOf(navArgument("reqId") { type = NavType.StringType; nullable = true; defaultValue = null }),
-                    enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
-                    exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() },
-                    popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
-                    popExitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() }
-                ) { backStackEntry ->
+            composable(AppRoutes.BA_DASHBOARD) {
+                AuthorizedRoute(requiredRoles = setOf(ProjectRole.ADMIN, ProjectRole.BUSINESS_ANALYST), viewModel = viewModel, routeTitle = "Business Analyst Workspace") {
+                    BusinessAnalystDashboardScreen(viewModel = viewModel)
+                }
+            }
+            composable(
+                route = AppRoutes.NEW_REQUIREMENT_FORM,
+                enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
+                exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() },
+                popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
+                popExitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() }
+            ) {
+                AuthorizedRoute(requiredRoles = setOf(ProjectRole.ADMIN, ProjectRole.BUSINESS_ANALYST), viewModel = viewModel, routeTitle = "Author Requirement Specification") {
+                    NewRequirementFormScreen(viewModel = viewModel)
+                }
+            }
+            composable(
+                route = AppRoutes.CREATE_EDIT_REQUIREMENT,
+                arguments = listOf(navArgument("reqId") { type = NavType.StringType; nullable = true; defaultValue = null }),
+                enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
+                exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() },
+                popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
+                popExitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() }
+            ) { backStackEntry ->
+                AuthorizedRoute(requiredRoles = setOf(ProjectRole.ADMIN, ProjectRole.BUSINESS_ANALYST), viewModel = viewModel, routeTitle = "Edit Requirement Specification") {
                     CreateEditRequirementScreen(viewModel = viewModel, reqId = backStackEntry.arguments?.getString("reqId"))
                 }
-                composable(
-                    route = AppRoutes.GENERATE_REQUIREMENTS,
-                    arguments = listOf(navArgument("projectId") { type = NavType.StringType; nullable = true; defaultValue = null }),
-                    enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
-                    exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() },
-                    popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
-                    popExitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() }
-                ) { backStackEntry ->
+            }
+            composable(
+                route = AppRoutes.GENERATE_REQUIREMENTS,
+                arguments = listOf(navArgument("projectId") { type = NavType.StringType; nullable = true; defaultValue = null }),
+                enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
+                exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() },
+                popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalEnter() },
+                popExitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.formModalExit() }
+            ) { backStackEntry ->
+                AuthorizedRoute(requiredRoles = setOf(ProjectRole.ADMIN, ProjectRole.BUSINESS_ANALYST), viewModel = viewModel, routeTitle = "AI Requirement Synthesizer") {
                     GenerateRequirementsScreen(viewModel = viewModel, targetProjectId = backStackEntry.arguments?.getString("projectId"))
                 }
-                composable(AppRoutes.TEAM_MANAGEMENT) { TeamManagementScreen(viewModel = viewModel) }
+            }
+            composable(AppRoutes.TEAM_MANAGEMENT) {
+                AuthorizedRoute(requiredRoles = setOf(ProjectRole.ADMIN, ProjectRole.BUSINESS_ANALYST), viewModel = viewModel, routeTitle = "Project Team Governance") {
+                    TeamManagementScreen(viewModel = viewModel)
+                }
             }
 
             // Requirements & Use Cases (Read available to all members)

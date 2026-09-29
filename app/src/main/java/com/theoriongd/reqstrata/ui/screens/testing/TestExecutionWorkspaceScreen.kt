@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.testing
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

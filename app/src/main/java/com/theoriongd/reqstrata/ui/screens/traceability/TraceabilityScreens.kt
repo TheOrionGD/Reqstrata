@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.traceability
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -60,7 +61,7 @@ fun TraceabilityMatrixScreen(viewModel: MainViewModel) {
                         onClick = { viewModel.navigateBack() },
                         modifier = Modifier.pressScale()
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF18181B))
@@ -296,7 +297,7 @@ fun ChangeImpactAnalysisScreen(
                         onClick = { viewModel.navigateBack() },
                         modifier = Modifier.pressScale()
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF18181B))
@@ -376,7 +377,7 @@ fun ChangeImpactAnalysisScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CompareArrows, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(24.dp))
+                    Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text("AI Change Impact Engine", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.White)

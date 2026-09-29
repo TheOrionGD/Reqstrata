@@ -21,6 +21,7 @@ sealed class Screen {
     data object Onboarding : Screen()
     data object Login : Screen()
     data object Register : Screen()
+    data object TenantSeparationRegister : Screen()
     data object ForgotPassword : Screen()
     data class EmailVerification(val email: String? = null) : Screen()
     data class ResetPassword(val email: String? = null) : Screen()
@@ -148,10 +149,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _successMessage = MutableStateFlow<String?>(null)
     val successMessage: StateFlow<String?> = _successMessage.asStateFlow()
 
-    // Active Database Accounts & Role-Based Access
-    private val _activeDatabaseAccounts = MutableStateFlow<List<UserEntity>>(emptyList())
-    val activeDatabaseAccounts: StateFlow<List<UserEntity>> = _activeDatabaseAccounts.asStateFlow()
-
     // Automated Tenant Separation & Strict Isolation
     private val _isTenantFilterStrict = MutableStateFlow(true)
     val isTenantFilterStrict: StateFlow<Boolean> = _isTenantFilterStrict.asStateFlow()
@@ -166,15 +163,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         com.theoriongd.reqstrata.ui.notifications.CentralizedNotificationService.init(application, centralizedNotifRepo)
         checkInitialSession()
-        loadActiveDatabaseAccounts()
         loadThemePreferences()
-    }
-
-    fun loadActiveDatabaseAccounts() {
-        viewModelScope.launch {
-            val accounts = authRepo.getActiveDatabaseAccounts()
-            _activeDatabaseAccounts.value = accounts
-        }
     }
 
     fun dismissInAppNotification() {
@@ -264,39 +253,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun loginWithActiveAccount(user: UserEntity) {
-        viewModelScope.launch {
-            val res = authRepo.loginActiveAccountDirect(user)
-            res.onSuccess { u ->
-                _currentUser.value = u
-                val role = mapTitleToRole(u.titleOrRole)
-                _currentRole.value = role
-
-                // Auto-bind active project from isolated tenant if available
-                val tenantProjects = projectRepo.getProjectsForTenant(u.tenantId).firstOrNull() ?: emptyList()
-                val projects = if (tenantProjects.isNotEmpty()) tenantProjects else (projectRepo.getAllProjects().firstOrNull() ?: emptyList())
-                if (projects.isNotEmpty() && _currentProject.value == null) {
-                    _currentProject.value = projects.first()
-                }
-
-                postNotification(
-                    title = "Active Account Verified",
-                    message = "Authenticated as ${u.fullName} (${role.title}). Role workspace activated.",
-                    type = com.theoriongd.reqstrata.ui.notifications.NotificationType.SUCCESS
-                )
-
-                _currentScreen.value = getRoleDefaultScreen(role)
-            }.onFailure { err ->
-                _errorMessage.value = err.message ?: "Authentication failed."
-            }
-        }
-    }
-
     private fun checkInitialSession() {
         viewModelScope.launch {
             val user = authRepo.getCurrentUser()
             if (user != null) {
                 _currentUser.value = user
+                val role = mapTitleToRole(user.titleOrRole)
+                _currentRole.value = role
+                val tenantProjects = projectRepo.getProjectsForTenant(user.tenantId).firstOrNull() ?: emptyList()
+                val projects = if (tenantProjects.isNotEmpty()) tenantProjects else (projectRepo.getAllProjects().firstOrNull() ?: emptyList())
+                if (projects.isNotEmpty() && _currentProject.value == null) {
+                    _currentProject.value = projects.first()
+                }
                 _currentScreen.value = Screen.ProjectSelection
             } else {
                 _currentScreen.value = Screen.Onboarding
@@ -307,15 +275,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun navigateTo(screen: Screen) {
         val role = _currentRole.value
         if (!CentralizedAuthorizationManager.isRouteAllowed(screen, role)) {
-            val required = CentralizedAuthorizationManager.getRequiredRolesForScreen(screen)
-            val msg = "Access Denied: Role '${role.title}' lacks authorization for ${screen.javaClass.simpleName}." +
-                    (if (required != null) " (Requires: ${required.joinToString { it.title }})" else "")
-            _errorMessage.value = msg
-            com.theoriongd.reqstrata.ui.notifications.CentralizedNotificationService.showInApp(
-                title = "Access Restricted",
-                message = "Role '${role.title}' is not authorized to access this section.",
-                type = com.theoriongd.reqstrata.ui.notifications.NotificationType.ALERT
-            )
+            // Silently ignore unauthorized routes; feature is hidden per role policy
             return
         }
         screenBackStack.add(_currentScreen.value)
@@ -350,11 +310,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun switchRoleForTesting(role: ProjectRole) {
-        _currentRole.value = role
-        _successMessage.value = "Active role changed to ${role.title}"
-    }
-
     fun clearMessages() {
         _errorMessage.value = null
         _successMessage.value = null
@@ -382,17 +337,138 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val res = authRepo.register(fullName, email, pass)
             res.onSuccess { user ->
                 _currentUser.value = user
-                _successMessage.value = "Registration successful! Automated Tenant '${user.tenantName}' isolated and activated."
+                _currentRole.value = com.theoriongd.reqstrata.domain.model.ProjectRole.ADMIN
+                _successMessage.value = "Registration successful! Project Owner workspace '${user.tenantName}' isolated and activated."
                 postNotification(
-                    title = "Automated Tenant Isolated",
-                    message = "Workspace '${user.tenantName}' provisioned with immediate access (Zero admin approval required).",
+                    title = "Project Owner Provisioned",
+                    message = "Workspace '${user.tenantName}' isolated with executive administrator authority (Zero manual approval required).",
                     type = com.theoriongd.reqstrata.ui.notifications.NotificationType.SUCCESS
                 )
-                loadActiveDatabaseAccounts()
                 navigateTo(Screen.ProjectSelection)
             }.onFailure { err ->
                 _errorMessage.value = err.message ?: "Registration failed."
             }
+        }
+    }
+
+    fun registerTenantSeparation(
+        request: com.theoriongd.reqstrata.data.repository.TenantSeparationRequest,
+        onSuccess: (com.theoriongd.reqstrata.data.repository.TenantSeparationResult) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val res = authRepo.registerTenantSeparation(request)
+            res.onSuccess { result ->
+                _currentUser.value = result.adminUser
+                _currentRole.value = com.theoriongd.reqstrata.domain.model.ProjectRole.ADMIN
+                _currentProject.value = result.defaultProject
+                if (request.strictIsolation) {
+                    _isTenantFilterStrict.value = true
+                }
+                _successMessage.value = "Tenant '${result.tenantName}' separated and active!"
+                postNotification(
+                    title = "Automated Tenant Isolated",
+                    message = "Workspace '${result.tenantName}' (${result.tenantId}) provisioned with ${result.createdUsers.size + 1} users.",
+                    type = com.theoriongd.reqstrata.ui.notifications.NotificationType.SUCCESS
+                )
+                onSuccess(result)
+            }.onFailure { err ->
+                val msg = err.message ?: "Failed to provision tenant separation."
+                _errorMessage.value = msg
+                onError(msg)
+            }
+        }
+    }
+
+    fun createHierarchicalUser(
+        name: String,
+        email: String,
+        password: String,
+        role: com.theoriongd.reqstrata.domain.model.ProjectRole,
+        projectId: String,
+        onSuccess: (com.theoriongd.reqstrata.data.local.entity.UserEntity) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (name.isBlank() || email.isBlank() || password.isBlank()) {
+            onError("All fields (Name, Email, Password) are required.")
+            return
+        }
+        if (!email.contains("@") || !email.contains(".")) {
+            onError("Please enter a valid email address.")
+            return
+        }
+        if (password.length < 6) {
+            onError("Password must be at least 6 characters.")
+            return
+        }
+
+        viewModelScope.launch {
+            val trimmedEmail = email.trim().lowercase()
+            val existing = db.userDao().getUserByEmail(trimmedEmail)
+            if (existing != null) {
+                onError("An account with email '$trimmedEmail' already exists in the database.")
+                return@launch
+            }
+
+            val creator = _currentUser.value
+            val tenantId = creator?.tenantId ?: "tenant_default"
+            val tenantName = creator?.tenantName ?: "Enterprise Core Workspace"
+            val newUserId = UUID.randomUUID().toString()
+
+            val roleColor = when (role) {
+                com.theoriongd.reqstrata.domain.model.ProjectRole.ADMIN -> 0xFF6D28D9
+                com.theoriongd.reqstrata.domain.model.ProjectRole.ARCHITECT -> 0xFF3B82F6
+                com.theoriongd.reqstrata.domain.model.ProjectRole.BUSINESS_ANALYST -> 0xFFF59E0B
+                com.theoriongd.reqstrata.domain.model.ProjectRole.DEVELOPER -> 0xFF10B981
+                com.theoriongd.reqstrata.domain.model.ProjectRole.TESTER -> 0xFFEC4899
+            }
+
+            val newUser = com.theoriongd.reqstrata.data.local.entity.UserEntity(
+                id = newUserId,
+                fullName = name.trim(),
+                email = trimmedEmail,
+                passwordHash = authRepo.hashPassword(password),
+                titleOrRole = role.title,
+                avatarColor = roleColor,
+                status = "ACTIVE",
+                tenantId = tenantId,
+                tenantName = tenantName,
+                createdAt = System.currentTimeMillis()
+            )
+            db.userDao().insertUser(newUser)
+
+            // Bind to project
+            val member = com.theoriongd.reqstrata.data.local.entity.ProjectMemberEntity(
+                id = UUID.randomUUID().toString(),
+                projectId = projectId,
+                userId = newUserId,
+                userName = newUser.fullName,
+                userEmail = newUser.email,
+                role = role.name,
+                joinedAt = System.currentTimeMillis()
+            )
+            db.projectDao().insertMember(member)
+
+            // Activity log
+            db.activityDao().insertActivity(
+                com.theoriongd.reqstrata.data.local.entity.ActivityLogEntity(
+                    id = UUID.randomUUID().toString(),
+                    projectId = projectId,
+                    actorName = creator?.fullName ?: "Project Lead",
+                    action = "Hierarchical User Provisioned",
+                    details = "Provisioned ${role.title} account for ${newUser.fullName} ($trimmedEmail) with active database login credentials.",
+                    targetType = "USER",
+                    targetId = newUserId
+                )
+            )
+
+            postNotification(
+                title = "Hierarchical Role Created",
+                message = "Created ${role.title} account for ${newUser.fullName} ($trimmedEmail). Account is active for login.",
+                type = com.theoriongd.reqstrata.ui.notifications.NotificationType.SUCCESS
+            )
+
+            onSuccess(newUser)
         }
     }
 
@@ -743,20 +819,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun toggleDynamicColors() {
-        val newVal = !useDynamicColors.value
-        useDynamicColors.value = newVal
+    fun setDynamicColors(enabled: Boolean) {
+        useDynamicColors.value = enabled
         viewModelScope.launch {
             try {
-                db.settingsDao().setSetting(AppSettingEntity("theme_dynamic_color", newVal.toString()))
+                db.settingsDao().setSetting(AppSettingEntity("theme_dynamic_color", enabled.toString()))
             } catch (e: Exception) {
                 android.util.Log.e("MainViewModel", "Failed to persist dynamic colors: ${e.message}")
             }
         }
     }
 
+    fun toggleDynamicColors() {
+        setDynamicColors(!useDynamicColors.value)
+    }
+
     fun setColorPalette(palette: AppColorPalette) {
         selectedColorPalette.value = palette
+        // Turn off dynamic wallpaper override so user's selected accent color is immediately applied!
+        if (useDynamicColors.value) {
+            useDynamicColors.value = false
+            viewModelScope.launch {
+                try {
+                    db.settingsDao().setSetting(AppSettingEntity("theme_dynamic_color", "false"))
+                } catch (e: Exception) {
+                    android.util.Log.e("MainViewModel", "Failed to persist dynamic colors: ${e.message}")
+                }
+            }
+        }
         viewModelScope.launch {
             try {
                 db.settingsDao().setSetting(AppSettingEntity("theme_color_palette", palette.id))

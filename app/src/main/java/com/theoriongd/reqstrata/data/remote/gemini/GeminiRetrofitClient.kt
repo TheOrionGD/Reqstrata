@@ -1,4 +1,4 @@
-﻿package com.theoriongd.reqstrata.data.remote.gemini
+package com.theoriongd.reqstrata.data.remote.gemini
 
 import android.util.Log
 import com.theoriongd.reqstrata.BuildConfig
@@ -20,9 +20,10 @@ object GeminiRetrofitClient {
     private const val TAG = "GeminiRetrofitClient"
     private const val BASE_URL = "https://generativelanguage.googleapis.com/"
 
-    const val MODEL_FLASH = "gemini-3.5-flash"
+    const val MODEL_FLASH = "gemini-3.1-flash-lite"
     const val MODEL_PRO = "gemini-3.1-pro-preview"
-    const val MODEL_FLASH_LITE = "gemini-3.1-flash-lite-preview"
+    const val MODEL_FLASH_LITE = "gemini-3.1-flash-lite"
+    const val MODEL_FLASH_ADVANCED = "gemini-3.8-flash"
 
     private val moshi: Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
@@ -46,15 +47,20 @@ object GeminiRetrofitClient {
     val service: GeminiRetrofitService = retrofit.create(GeminiRetrofitService::class.java)
 
     private fun getApiKey(): String {
-        return try {
+        val configured = try {
             BuildConfig.GEMINI_API_KEY
         } catch (_: Throwable) {
             ""
         }
+        return if (configured.isNotBlank() && configured != "MY_GEMINI_API_KEY" && configured != "YOUR_GEMINI_API_KEY") {
+            configured
+        } else {
+            "AQ.Ab8RN6LS_G0qzVA6AW66aEFog0D0SrUgkKyUpl2V8Clv74yPsQ"
+        }
     }
 
     /**
-     * Generate content with Gemini using Retrofit service
+     * Generate content with Gemini using Retrofit service with model cascade failover
      */
     suspend fun generateContent(
         prompt: String,
@@ -62,51 +68,62 @@ object GeminiRetrofitClient {
         systemInstruction: String? = null
     ): Result<String> = withContext(Dispatchers.IO) {
         val apiKey = getApiKey()
-        if (apiKey.isBlank() || apiKey == "MY_GEMINI_API_KEY") {
-            Log.w(TAG, "No valid Gemini API key configured in BuildConfig.")
-            return@withContext Result.failure(IllegalStateException("API key missing or placeholder"))
+        if (apiKey.isBlank()) {
+            Log.w(TAG, "No valid Gemini API key configured.")
+            return@withContext Result.failure(IllegalStateException("API key missing"))
         }
 
-        try {
-            val request = GeminiGenerateRequest(
-                contents = listOf(
-                    GeminiContent(
-                        role = "user",
-                        parts = listOf(GeminiPart(text = prompt))
-                    )
-                ),
-                systemInstruction = systemInstruction?.let {
-                    GeminiContent(
-                        role = "system",
-                        parts = listOf(GeminiPart(text = it))
-                    )
-                },
-                generationConfig = GeminiGenerationConfig()
-            )
-
-            val response = service.generateContent(
-                model = model,
-                apiKey = apiKey,
-                request = request
-            )
-
-            if (!response.isSuccessful) {
-                val errorBody = response.errorBody()?.string() ?: "HTTP ${response.code()}"
-                Log.e(TAG, "Gemini Retrofit request failed: $errorBody")
-                return@withContext Result.failure(Exception("Gemini error (${response.code()}): $errorBody"))
-            }
-
-            val body = response.body()
-            val text = body?.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-            if (!text.isNullOrBlank()) {
-                Result.success(text)
-            } else {
-                Result.failure(Exception("Empty candidate response from Gemini API"))
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception during Gemini Retrofit call", e)
-            Result.failure(e)
+        val modelsToTry = LinkedHashSet<String>().apply {
+            add(model)
+            add(MODEL_FLASH_LITE)
+            add(MODEL_FLASH_ADVANCED)
+            add(MODEL_PRO)
         }
+
+        var lastError: Exception? = null
+
+        val request = GeminiGenerateRequest(
+            contents = listOf(
+                GeminiContent(
+                    role = "user",
+                    parts = listOf(GeminiPart(text = prompt))
+                )
+            ),
+            systemInstruction = systemInstruction?.let {
+                GeminiContent(
+                    role = "system",
+                    parts = listOf(GeminiPart(text = it))
+                )
+            },
+            generationConfig = GeminiGenerationConfig()
+        )
+
+        for (targetModel in modelsToTry) {
+            try {
+                val response = service.generateContent(
+                    model = targetModel,
+                    apiKey = apiKey,
+                    request = request
+                )
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    val text = body?.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+                    if (!text.isNullOrBlank()) {
+                        return@withContext Result.success(text)
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string() ?: "HTTP ${response.code()}"
+                    Log.w(TAG, "Gemini Retrofit request failed on $targetModel: $errorBody. Trying fallback...")
+                    lastError = Exception("Gemini error ($targetModel): ${response.code()} $errorBody")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Exception during Gemini Retrofit call on $targetModel: ${e.message}. Trying fallback...")
+                lastError = e
+            }
+        }
+
+        Result.failure(lastError ?: Exception("All Gemini Retrofit models failed"))
     }
 
     /**

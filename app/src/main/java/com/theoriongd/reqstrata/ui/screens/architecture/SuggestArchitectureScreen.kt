@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.architecture
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -124,7 +125,7 @@ fun SuggestArchitectureScreen(
                             viewModel.navigateTo(Screen.GenerateTestSuite(projectId))
                         }) {
                             Icon(
-                                Icons.Default.FactCheck,
+                                Icons.AutoMirrored.Filled.FactCheck,
                                 contentDescription = "Generate Test Suite",
                                 tint = Color(0xFF10B981)
                             )
@@ -597,7 +598,7 @@ fun SuggestArchitectureScreen(
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
-                        Icon(Icons.Default.FactCheck, contentDescription = null, tint = Color(0xFF8B5CF6))
+                        Icon(Icons.AutoMirrored.Filled.FactCheck, contentDescription = null, tint = Color(0xFF8B5CF6))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             "Continue to Automatic Test Suite Generation",

@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.project
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -239,7 +240,7 @@ fun AdminDashboardScreen(viewModel: MainViewModel) {
                         title = "Requirements",
                         value = "${requirements.size}",
                         subtitle = "$approvedReqCount approved",
-                        icon = Icons.Default.ListAlt,
+                        icon = Icons.AutoMirrored.Filled.ListAlt,
                         color = PrimaryPurple,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.navigateTo(Screen.RequirementsList) }
@@ -271,7 +272,7 @@ fun AdminDashboardScreen(viewModel: MainViewModel) {
                         title = "Test Coverage",
                         value = "$testCoverage%",
                         subtitle = "$failedTestCount failed test(s)",
-                        icon = Icons.Default.FactCheck,
+                        icon = Icons.AutoMirrored.Filled.FactCheck,
                         color = if (failedTestCount > 0) StatusError else StatusSuccess,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.navigateTo(Screen.TestingWorkspace) }
@@ -329,7 +330,7 @@ fun AdminDashboardScreen(viewModel: MainViewModel) {
                     item {
                         ActionChipButton(
                             title = "Change Impact",
-                            icon = Icons.Default.CompareArrows,
+                            icon = Icons.AutoMirrored.Filled.CompareArrows,
                             onClick = { viewModel.navigateTo(Screen.ChangeImpactDashboard) }
                         )
                     }

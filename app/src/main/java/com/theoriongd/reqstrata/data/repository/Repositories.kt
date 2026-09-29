@@ -50,6 +50,7 @@ class AuthRepository(private val db: AppDatabase) {
             fullName = fullName.trim(),
             email = trimmedEmail,
             passwordHash = hashPassword(password),
+            titleOrRole = "Project Owner / Administrator",
             avatarColor = 0xFF6D28D9,
             status = "ACTIVE",
             tenantId = tenantId,
@@ -94,8 +95,7 @@ class AuthRepository(private val db: AppDatabase) {
     }
 
     suspend fun getActiveDatabaseAccounts(): List<UserEntity> {
-        seedDefaultUserIfNeeded()
-        return userDao.getAllUsersDirect().filter { it.status == "ACTIVE" }
+        return userDao.getAllUsersDirect().filter { it.status == "ACTIVE" && !it.id.startsWith("user-") }
     }
 
     suspend fun resetPassword(email: String, newPass: String): Result<Unit> {
@@ -112,154 +112,226 @@ class AuthRepository(private val db: AppDatabase) {
     fun getUsersByTenant(tenantId: String): Flow<List<UserEntity>> = userDao.getUsersByTenant(tenantId)
     suspend fun getUsersByTenantDirect(tenantId: String): List<UserEntity> = userDao.getUsersByTenantDirect(tenantId)
 
-    suspend fun seedDefaultUserIfNeeded(): UserEntity {
-        val current = getCurrentUser()
-        val existingAdmin = userDao.getUserByEmail("admin@req2sys.io")
+    fun hashPassword(password: String): String {
+        return password.hashCode().toString() // simple secure deterministic hash
+    }
 
-        // Pre-seed comprehensive active role-based accounts in database
-        val defaultRoleAccounts = listOf(
-            UserEntity(
-                id = "user-admin-01",
-                fullName = "Alex Vance, Principal Architect",
-                email = "admin@req2sys.io",
-                passwordHash = hashPassword("Admin123!"),
-                titleOrRole = "Principal Architect & Admin",
-                avatarColor = 0xFF6D28D9,
+    suspend fun registerTenantSeparation(request: TenantSeparationRequest): Result<TenantSeparationResult> {
+        val trimmedTenantName = request.tenantName.trim()
+        if (trimmedTenantName.isBlank()) {
+            return Result.failure(IllegalArgumentException("Organization / Tenant name is required."))
+        }
+        val rawSlug = request.tenantSlug.trim().lowercase().replace(Regex("[^a-z0-9_-]"), "_")
+        val finalTenantId = if (rawSlug.startsWith("tenant_")) rawSlug else "tenant_${rawSlug.ifBlank { UUID.nameUUIDFromBytes(trimmedTenantName.lowercase().toByteArray()).toString().take(8) }}"
+
+        val adminEmail = request.adminEmail.trim().lowercase()
+        if (adminEmail.isBlank() || !adminEmail.contains("@") || !adminEmail.contains(".")) {
+            return Result.failure(IllegalArgumentException("Valid tenant administrator email is required."))
+        }
+        if (request.adminFullName.trim().isBlank()) {
+            return Result.failure(IllegalArgumentException("Tenant administrator full name is required."))
+        }
+        if (request.adminPassword.length < 6) {
+            return Result.failure(IllegalArgumentException("Admin password must be at least 6 characters."))
+        }
+
+        // Verify admin email is not already taken
+        if (userDao.getUserByEmail(adminEmail) != null) {
+            return Result.failure(IllegalStateException("An account with email '$adminEmail' already exists."))
+        }
+
+        // Validate all initial team members
+        val seenEmails = mutableSetOf(adminEmail)
+        val validMembers = mutableListOf<TenantMemberRegistrationItem>()
+        for (m in request.initialUsers) {
+            val mName = m.fullName.trim()
+            val mEmail = m.email.trim().lowercase()
+            if (mName.isBlank() && mEmail.isBlank()) continue
+            if (mName.isBlank()) {
+                return Result.failure(IllegalArgumentException("Full name required for member with email: $mEmail"))
+            }
+            if (!mEmail.contains("@") || !mEmail.contains(".")) {
+                return Result.failure(IllegalArgumentException("Invalid email for member '$mName': $mEmail"))
+            }
+            if (m.password.length < 6) {
+                return Result.failure(IllegalArgumentException("Password for user '$mEmail' must be at least 6 characters."))
+            }
+            if (seenEmails.contains(mEmail)) {
+                return Result.failure(IllegalArgumentException("Duplicate email in tenant registration: $mEmail"))
+            }
+            if (userDao.getUserByEmail(mEmail) != null) {
+                return Result.failure(IllegalStateException("An account with email '$mEmail' already exists."))
+            }
+            seenEmails.add(mEmail)
+            validMembers.add(m.copy(fullName = mName, email = mEmail))
+        }
+
+        // 1. Create Admin User
+        val adminUser = UserEntity(
+            id = UUID.randomUUID().toString(),
+            fullName = request.adminFullName.trim(),
+            email = adminEmail,
+            passwordHash = hashPassword(request.adminPassword),
+            titleOrRole = request.adminTitle.ifBlank { "Tenant Administrator" },
+            avatarColor = 0xFF6D28D9,
+            status = "ACTIVE",
+            tenantId = finalTenantId,
+            tenantName = trimmedTenantName,
+            createdAt = System.currentTimeMillis()
+        )
+        userDao.insertUser(adminUser)
+
+        try {
+            val adminMongo = MongoDocument.fromUser(adminUser)
+            MongoStitchClient.users.replaceOne(MongoFilter.eq("_id", adminUser.id), adminMongo, upsert = true)
+            MongoBackgroundSyncService.pushChangeRealtime(MongoStitchClient.COLL_USERS, "replace", adminUser.id, adminMongo)
+        } catch (_: Exception) {}
+
+        // 2. Create Provisioned Members
+        val roleColors = mapOf(
+            ProjectRole.ADMIN to 0xFF6D28D9,
+            ProjectRole.ARCHITECT to 0xFF3B82F6,
+            ProjectRole.BUSINESS_ANALYST to 0xFFF59E0B,
+            ProjectRole.DEVELOPER to 0xFF10B981,
+            ProjectRole.TESTER to 0xFFEC4899
+        )
+        val createdMembers = mutableListOf<UserEntity>()
+        for (m in validMembers) {
+            val memberUser = UserEntity(
+                id = UUID.randomUUID().toString(),
+                fullName = m.fullName,
+                email = m.email,
+                passwordHash = hashPassword(m.password),
+                titleOrRole = m.role.title,
+                avatarColor = roleColors[m.role] ?: 0xFF8B5CF6,
                 status = "ACTIVE",
-                tenantId = "tenant_req2sys",
-                tenantName = "Req2Sys Enterprise Core"
-            ),
-            UserEntity(
-                id = "user-ba-01",
-                fullName = "Maya Lin, Lead Business Analyst",
-                email = "ba@req2sys.io",
-                passwordHash = hashPassword("Ba123!"),
-                titleOrRole = "Lead Business Analyst",
-                avatarColor = 0xFF10B981,
-                status = "ACTIVE",
-                tenantId = "tenant_req2sys",
-                tenantName = "Req2Sys Enterprise Core"
-            ),
-            UserEntity(
-                id = "user-arch-01",
-                fullName = "Marcus Cole, Enterprise Architect",
-                email = "architect@req2sys.io",
-                passwordHash = hashPassword("Arch123!"),
-                titleOrRole = "Enterprise Systems Architect",
-                avatarColor = 0xFF8B5CF6,
-                status = "ACTIVE",
-                tenantId = "tenant_req2sys",
-                tenantName = "Req2Sys Enterprise Core"
-            ),
-            UserEntity(
-                id = "user-dev-01",
-                fullName = "Elena Rostova, Senior Developer",
-                email = "dev@req2sys.io",
-                passwordHash = hashPassword("Dev123!"),
-                titleOrRole = "Full-Stack Software Engineer",
-                avatarColor = 0xFFF59E0B,
-                status = "ACTIVE",
-                tenantId = "tenant_req2sys",
-                tenantName = "Req2Sys Enterprise Core"
-            ),
-            UserEntity(
-                id = "user-qa-01",
-                fullName = "David Kim, QA Lead",
-                email = "qa@req2sys.io",
-                passwordHash = hashPassword("Qa123!"),
-                titleOrRole = "Lead Quality Assurance & Test Engineer",
-                avatarColor = 0xFFEC4899,
-                status = "ACTIVE",
-                tenantId = "tenant_req2sys",
-                tenantName = "Req2Sys Enterprise Core"
+                tenantId = finalTenantId,
+                tenantName = trimmedTenantName,
+                createdAt = System.currentTimeMillis()
+            )
+            userDao.insertUser(memberUser)
+            createdMembers.add(memberUser)
+
+            try {
+                val memberMongo = MongoDocument.fromUser(memberUser)
+                MongoStitchClient.users.replaceOne(MongoFilter.eq("_id", memberUser.id), memberMongo, upsert = true)
+                MongoBackgroundSyncService.pushChangeRealtime(MongoStitchClient.COLL_USERS, "replace", memberUser.id, memberMongo)
+            } catch (_: Exception) {}
+        }
+
+        // 3. Create Default Isolated Project
+        val projectName = request.defaultProjectName.trim().ifBlank { "$trimmedTenantName Core System" }
+        val projectId = UUID.randomUUID().toString()
+        val defaultProject = ProjectEntity(
+            id = projectId,
+            name = projectName,
+            description = "Primary isolated enterprise partition for $trimmedTenantName (${request.isolationMode})",
+            domain = request.industry.ifBlank { "Enterprise SaaS" },
+            projectType = "Enterprise Multi-Tenant",
+            techStack = "Kotlin, Jetpack Compose, Room, Android",
+            methodology = "Agile Scrum",
+            visibility = "Private",
+            status = "Active",
+            ownerId = adminUser.id,
+            tenantId = finalTenantId,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+        db.projectDao().insertProject(defaultProject)
+
+        try {
+            val projectMongo = MongoDocument.fromProject(defaultProject)
+            MongoStitchClient.projects.replaceOne(MongoFilter.eq("_id", projectId), projectMongo, upsert = true)
+            MongoBackgroundSyncService.pushChangeRealtime(MongoStitchClient.COLL_PROJECTS, "replace", projectId, projectMongo)
+        } catch (_: Exception) {}
+
+        // 4. Bind Admin & Members to Project
+        val adminMember = ProjectMemberEntity(
+            id = UUID.randomUUID().toString(),
+            projectId = projectId,
+            userId = adminUser.id,
+            userName = adminUser.fullName,
+            userEmail = adminUser.email,
+            role = ProjectRole.ADMIN.name
+        )
+        db.projectDao().insertMember(adminMember)
+
+        for (m in validMembers) {
+            val userRecord = createdMembers.find { it.email == m.email } ?: continue
+            db.projectDao().insertMember(
+                ProjectMemberEntity(
+                    id = UUID.randomUUID().toString(),
+                    projectId = projectId,
+                    userId = userRecord.id,
+                    userName = userRecord.fullName,
+                    userEmail = userRecord.email,
+                    role = m.role.name
+                )
+            )
+        }
+
+        // 5. Audit Log
+        db.activityDao().insertActivity(
+            ActivityLogEntity(
+                id = UUID.randomUUID().toString(),
+                projectId = projectId,
+                actorName = adminUser.fullName,
+                action = "Tenant Partition Provisioned",
+                details = "Provisioned isolated tenant '$trimmedTenantName' ($finalTenantId) with ${createdMembers.size + 1} users in ${request.primaryRegion} [${request.isolationMode}].",
+                targetType = "TENANT",
+                targetId = finalTenantId
             )
         )
 
-        for (account in defaultRoleAccounts) {
-            val existing = userDao.getUserByEmail(account.email)
-            val userToStore = if (existing == null) {
-                userDao.insertUser(account)
-                account
-            } else {
-                if (existing.tenantId == "tenant_default" || existing.tenantId.isBlank()) {
-                    userDao.updateUser(existing.copy(tenantId = "tenant_req2sys", tenantName = "Req2Sys Enterprise Core"))
-                }
-                existing
-            }
-            val mongoDoc = MongoDocument.fromUser(userToStore)
-            MongoStitchClient.users.replaceOne(MongoFilter.eq("_id", userToStore.id), mongoDoc, upsert = true)
-        }
+        // 6. Store Tenant Metadata
+        settingsDao.setSetting(AppSettingEntity("tenant_${finalTenantId}_isolation_mode", request.isolationMode))
+        settingsDao.setSetting(AppSettingEntity("tenant_${finalTenantId}_region", request.primaryRegion))
+        settingsDao.setSetting(AppSettingEntity("tenant_${finalTenantId}_industry", request.industry))
+        settingsDao.setSetting(AppSettingEntity("tenant_${finalTenantId}_strict", request.strictIsolation.toString()))
+        settingsDao.setSetting(AppSettingEntity("current_user_id", adminUser.id))
 
-        // Auto-seed initial project under tenant_req2sys if no projects exist
-        val existingProjects = db.projectDao().getAllProjects().firstOrNull() ?: emptyList()
-        if (existingProjects.isEmpty()) {
-            val sampleProjectId = "proj-req2sys-core-01"
-            val sampleProj = ProjectEntity(
-                id = sampleProjectId,
-                name = "CloudScale NextGen Commerce",
-                description = "High-availability, event-driven enterprise e-commerce platform with automated microservices and full traceability.",
-                domain = "E-Commerce & Retail",
-                projectType = "Enterprise Web & Mobile",
-                techStack = "Kotlin, Spring Boot, Compose, React, MongoDB Atlas",
-                methodology = "Agile / Scrum",
-                visibility = "Private",
-                status = "Active",
-                ownerId = "user-admin-01",
-                tenantId = "tenant_req2sys"
+        return Result.success(
+            TenantSeparationResult(
+                tenantId = finalTenantId,
+                tenantName = trimmedTenantName,
+                adminUser = adminUser,
+                createdUsers = createdMembers,
+                defaultProject = defaultProject
             )
-            db.projectDao().insertProject(sampleProj)
-            db.projectDao().insertMember(ProjectMemberEntity(
-                id = UUID.randomUUID().toString(),
-                projectId = sampleProjectId,
-                userId = "user-admin-01",
-                userName = "Alex Vance, Principal Architect",
-                userEmail = "admin@req2sys.io",
-                role = ProjectRole.ADMIN.name
-            ))
-            db.projectDao().insertMember(ProjectMemberEntity(
-                id = UUID.randomUUID().toString(),
-                projectId = sampleProjectId,
-                userId = "user-ba-01",
-                userName = "Maya Lin, Lead Business Analyst",
-                userEmail = "ba@req2sys.io",
-                role = ProjectRole.BUSINESS_ANALYST.name
-            ))
-            db.projectDao().insertMember(ProjectMemberEntity(
-                id = UUID.randomUUID().toString(),
-                projectId = sampleProjectId,
-                userId = "user-arch-01",
-                userName = "Marcus Cole, Enterprise Architect",
-                userEmail = "architect@req2sys.io",
-                role = ProjectRole.ARCHITECT.name
-            ))
-            db.projectDao().insertMember(ProjectMemberEntity(
-                id = UUID.randomUUID().toString(),
-                projectId = sampleProjectId,
-                userId = "user-dev-01",
-                userName = "Elena Rostova, Senior Developer",
-                userEmail = "dev@req2sys.io",
-                role = ProjectRole.DEVELOPER.name
-            ))
-            db.projectDao().insertMember(ProjectMemberEntity(
-                id = UUID.randomUUID().toString(),
-                projectId = sampleProjectId,
-                userId = "user-qa-01",
-                userName = "David Kim, QA Lead",
-                userEmail = "qa@req2sys.io",
-                role = ProjectRole.TESTER.name
-            ))
-        }
-
-        if (current != null) return current
-        val admin = userDao.getUserByEmail("admin@req2sys.io") ?: defaultRoleAccounts.first()
-        settingsDao.setSetting(AppSettingEntity("current_user_id", admin.id))
-        return admin
-    }
-
-    private fun hashPassword(password: String): String {
-        return password.hashCode().toString() // simple secure deterministic hash
+        )
     }
 }
+
+data class TenantSeparationRequest(
+    val tenantName: String,
+    val tenantSlug: String,
+    val isolationMode: String = "Dedicated Sovereign Partition",
+    val industry: String = "Enterprise SaaS",
+    val primaryRegion: String = "Local Sovereign Partition",
+    val defaultProjectName: String = "",
+    val adminFullName: String,
+    val adminEmail: String,
+    val adminPassword: String,
+    val adminTitle: String = "Tenant Administrator",
+    val initialUsers: List<TenantMemberRegistrationItem> = emptyList(),
+    val strictIsolation: Boolean = true
+)
+
+data class TenantMemberRegistrationItem(
+    val id: String = UUID.randomUUID().toString(),
+    val fullName: String = "",
+    val email: String = "",
+    val role: ProjectRole = ProjectRole.DEVELOPER,
+    val password: String = "Welcome@2026"
+)
+
+data class TenantSeparationResult(
+    val tenantId: String,
+    val tenantName: String,
+    val adminUser: UserEntity,
+    val createdUsers: List<UserEntity>,
+    val defaultProject: ProjectEntity
+)
 
 class ProjectRepository(private val db: AppDatabase) {
     private val projectDao = db.projectDao()

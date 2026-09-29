@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.architecture
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -208,7 +209,7 @@ fun ArchitectDashboardScreen(viewModel: MainViewModel) {
                         title = "Architecture Decisions",
                         value = "${decisions.size}",
                         subtitle = "Documented ADRs",
-                        icon = Icons.Default.Article,
+                        icon = Icons.AutoMirrored.Filled.Article,
                         color = StatusAmber,
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.navigateTo(Screen.ArchitectureDecisions) }
@@ -266,7 +267,7 @@ fun ArchitectDashboardScreen(viewModel: MainViewModel) {
                     item {
                         ActionChipButton(
                             title = "ADR Log",
-                            icon = Icons.Default.Article,
+                            icon = Icons.AutoMirrored.Filled.Article,
                             onClick = { viewModel.navigateTo(Screen.ArchitectureDecisions) }
                         )
                     }

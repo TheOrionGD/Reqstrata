@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.requirements
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -211,7 +212,7 @@ fun RequirementAiAnalysisScreen(
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                                 ) {
                                     Row(modifier = Modifier.padding(10.dp)) {
-                                        Icon(Icons.Default.HelpOutline, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
+                                        Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(18.dp))
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(info, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall)
                                     }

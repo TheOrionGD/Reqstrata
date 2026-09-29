@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.testing
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -59,7 +60,7 @@ fun TestingWorkspaceScreen(viewModel: MainViewModel) {
                 title = { Text("QA & Testing Workspace", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.navigateBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 actions = {
@@ -149,7 +150,7 @@ fun TestingWorkspaceScreen(viewModel: MainViewModel) {
                 EmptyStateView(
                     title = "No Test Cases",
                     message = "Synthesize test cases using Gemini or create custom functional and security test suites.",
-                    icon = Icons.Default.FactCheck
+                    icon = Icons.AutoMirrored.Filled.FactCheck
                 )
             } else {
                 LazyColumn(

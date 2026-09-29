@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.traceability
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -171,7 +172,7 @@ fun ChangeImpactDashboardScreen(viewModel: MainViewModel) {
                                     .background(PrimaryPurple),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.CompareArrows, contentDescription = null, tint = Color.White)
+                                Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null, tint = Color.White)
                             }
                             Spacer(modifier = Modifier.width(14.dp))
                             Column(modifier = Modifier.weight(1f)) {

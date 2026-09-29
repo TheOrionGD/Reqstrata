@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.requirements
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -131,7 +132,7 @@ fun RequirementComparisonScreen(
                     }
 
                     Icon(
-                        Icons.Default.CompareArrows,
+                        Icons.AutoMirrored.Filled.CompareArrows,
                         contentDescription = "Versus",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(28.dp).padding(horizontal = 4.dp)

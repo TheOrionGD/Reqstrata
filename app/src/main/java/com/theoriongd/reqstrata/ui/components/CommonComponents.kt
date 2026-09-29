@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.components
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background

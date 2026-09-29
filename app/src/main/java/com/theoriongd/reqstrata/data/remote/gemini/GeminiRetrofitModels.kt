@@ -1,59 +1,59 @@
-﻿package com.theoriongd.reqstrata.data.remote.gemini
+package com.theoriongd.reqstrata.data.remote.gemini
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class GeminiGenerateRequest(
-    @Json(name = "contents") val contents: List<GeminiContent>,
-    @Json(name = "systemInstruction") val systemInstruction: GeminiContent? = null,
-    @Json(name = "generationConfig") val generationConfig: GeminiGenerationConfig? = null
+    @param:Json(name = "contents") val contents: List<GeminiContent>,
+    @param:Json(name = "systemInstruction") val systemInstruction: GeminiContent? = null,
+    @param:Json(name = "generationConfig") val generationConfig: GeminiGenerationConfig? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class GeminiContent(
-    @Json(name = "role") val role: String? = "user",
-    @Json(name = "parts") val parts: List<GeminiPart>
+    @param:Json(name = "role") val role: String? = "user",
+    @param:Json(name = "parts") val parts: List<GeminiPart>
 )
 
 @JsonClass(generateAdapter = true)
 data class GeminiPart(
-    @Json(name = "text") val text: String
+    @param:Json(name = "text") val text: String
 )
 
 @JsonClass(generateAdapter = true)
 data class GeminiGenerationConfig(
-    @Json(name = "temperature") val temperature: Double? = 0.4,
-    @Json(name = "topP") val topP: Double? = 0.95,
-    @Json(name = "topK") val topK: Int? = 40,
-    @Json(name = "maxOutputTokens") val maxOutputTokens: Int? = 8192,
-    @Json(name = "responseMimeType") val responseMimeType: String? = null
+    @param:Json(name = "temperature") val temperature: Double? = 0.4,
+    @param:Json(name = "topP") val topP: Double? = 0.95,
+    @param:Json(name = "topK") val topK: Int? = 40,
+    @param:Json(name = "maxOutputTokens") val maxOutputTokens: Int? = 8192,
+    @param:Json(name = "responseMimeType") val responseMimeType: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class GeminiGenerateResponse(
-    @Json(name = "candidates") val candidates: List<GeminiCandidate>? = null,
-    @Json(name = "promptFeedback") val promptFeedback: GeminiPromptFeedback? = null
+    @param:Json(name = "candidates") val candidates: List<GeminiCandidate>? = null,
+    @param:Json(name = "promptFeedback") val promptFeedback: GeminiPromptFeedback? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class GeminiCandidate(
-    @Json(name = "content") val content: GeminiContentResponse? = null,
-    @Json(name = "finishReason") val finishReason: String? = null
+    @param:Json(name = "content") val content: GeminiContentResponse? = null,
+    @param:Json(name = "finishReason") val finishReason: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class GeminiContentResponse(
-    @Json(name = "parts") val parts: List<GeminiPartResponse>? = null,
-    @Json(name = "role") val role: String? = null
+    @param:Json(name = "parts") val parts: List<GeminiPartResponse>? = null,
+    @param:Json(name = "role") val role: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class GeminiPartResponse(
-    @Json(name = "text") val text: String? = null
+    @param:Json(name = "text") val text: String? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class GeminiPromptFeedback(
-    @Json(name = "blockReason") val blockReason: String? = null
+    @param:Json(name = "blockReason") val blockReason: String? = null
 )

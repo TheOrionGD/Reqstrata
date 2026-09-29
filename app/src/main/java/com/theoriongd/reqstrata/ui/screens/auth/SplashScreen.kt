@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -65,19 +66,19 @@ fun SplashScreen(viewModel: MainViewModel) {
 
         delay(400)
         if (user != null) {
-            statusText = "Resolving project memberships for ${user.fullName}..."
-            val projects = viewModel.projectRepo.getAllProjects().firstOrNull() ?: emptyList()
+            statusText = "Resolving projects for ${user.fullName}..."
+            val tenantProjects = viewModel.projectRepo.getProjectsForTenant(user.tenantId).firstOrNull() ?: emptyList()
             delay(300)
-            if (projects.isNotEmpty()) {
-                val lastProject = projects.first()
+            if (tenantProjects.isNotEmpty()) {
+                val lastProject = tenantProjects.first()
                 val role = viewModel.projectRepo.getUserRole(lastProject.id, user.id)
-                viewModel.switchRoleForTesting(role)
+                viewModel.selectProject(lastProject)
                 viewModel.navigateTo(viewModel.getRoleDefaultScreen(role))
             } else {
                 viewModel.navigateTo(Screen.ProjectSelection)
             }
         } else {
-            statusText = "Starting onboarding workflow..."
+            statusText = "Welcome to Reqstrata..."
             delay(300)
             viewModel.navigateTo(Screen.Onboarding)
         }
@@ -110,24 +111,13 @@ fun SplashScreen(viewModel: MainViewModel) {
                     scaleY = activeScale
                 }
         ) {
-            Box(
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(id = com.theoriongd.reqstrata.R.drawable.ic_app_logo),
+                contentDescription = "Reqstrata Logo",
                 modifier = Modifier
-                    .size(96.dp)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(PrimaryViolet, PrimaryLight)
-                        ),
-                        RoundedCornerShape(24.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Hub,
-                    contentDescription = "Reqstrata Logo",
-                    tint = Color.White,
-                    modifier = Modifier.size(54.dp)
-                )
-            }
+                    .size(108.dp)
+                    .clip(RoundedCornerShape(26.dp))
+            )
 
             Spacer(modifier = Modifier.height(28.dp))
 

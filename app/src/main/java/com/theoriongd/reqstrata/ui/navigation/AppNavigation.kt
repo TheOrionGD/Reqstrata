@@ -73,6 +73,7 @@ fun AppNavigation(viewModel: MainViewModel) {
             Screen.Onboarding,
             Screen.Login,
             Screen.Register,
+            Screen.TenantSeparationRegister,
             Screen.ForgotPassword
         ) || currentScreen is Screen.EmailVerification || currentScreen is Screen.ResetPassword
 
@@ -83,6 +84,7 @@ fun AppNavigation(viewModel: MainViewModel) {
                         DynamicRoleBottomBar(viewModel = viewModel)
                     }
                 },
+                contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
                 modifier = Modifier.fillMaxSize()
             ) { innerPadding ->
                 NavHost(
@@ -90,7 +92,7 @@ fun AppNavigation(viewModel: MainViewModel) {
                     startDestination = AppRoutes.SPLASH,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding),
+                        .padding(bottom = innerPadding.calculateBottomPadding()),
                     enterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.horizontalSlideEnter(isForward = true, isReduceMotion = reduceMotion) },
                     exitTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.horizontalSlideExit(isForward = true, isReduceMotion = reduceMotion) },
                     popEnterTransition = { com.theoriongd.reqstrata.ui.motion.MotionTransition.horizontalSlideEnter(isForward = false, isReduceMotion = reduceMotion) },

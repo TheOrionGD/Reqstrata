@@ -278,6 +278,55 @@ class ArchitectureAndTestingSuiteTest {
         val db = com.theoriongd.reqstrata.data.local.AppDatabase.getDatabase(context)
         val authRepo = com.theoriongd.reqstrata.data.repository.AuthRepository(db)
 
+        // Ensure default database accounts are seeded for verification
+        if (authRepo.getActiveDatabaseAccounts().none { it.email == "admin@req2sys.io" }) {
+            val seedUsers = listOf(
+                com.theoriongd.reqstrata.data.local.entity.UserEntity(
+                    id = "seed-admin-1",
+                    fullName = "Admin User",
+                    email = "admin@req2sys.io",
+                    passwordHash = authRepo.hashPassword("Pass123!"),
+                    titleOrRole = "Project Owner / Admin",
+                    status = "ACTIVE"
+                ),
+                com.theoriongd.reqstrata.data.local.entity.UserEntity(
+                    id = "seed-ba-1",
+                    fullName = "BA User",
+                    email = "ba@req2sys.io",
+                    passwordHash = authRepo.hashPassword("Pass123!"),
+                    titleOrRole = "Business Analyst",
+                    status = "ACTIVE"
+                ),
+                com.theoriongd.reqstrata.data.local.entity.UserEntity(
+                    id = "seed-arch-1",
+                    fullName = "Architect User",
+                    email = "architect@req2sys.io",
+                    passwordHash = authRepo.hashPassword("Pass123!"),
+                    titleOrRole = "System Architect",
+                    status = "ACTIVE"
+                ),
+                com.theoriongd.reqstrata.data.local.entity.UserEntity(
+                    id = "seed-dev-1",
+                    fullName = "Developer User",
+                    email = "dev@req2sys.io",
+                    passwordHash = authRepo.hashPassword("Pass123!"),
+                    titleOrRole = "Developer",
+                    status = "ACTIVE"
+                ),
+                com.theoriongd.reqstrata.data.local.entity.UserEntity(
+                    id = "seed-qa-1",
+                    fullName = "QA User",
+                    email = "qa@req2sys.io",
+                    passwordHash = authRepo.hashPassword("Pass123!"),
+                    titleOrRole = "Tester / QA",
+                    status = "ACTIVE"
+                )
+            )
+            for (u in seedUsers) {
+                db.userDao().insertUser(u)
+            }
+        }
+
         val activeAccounts = authRepo.getActiveDatabaseAccounts()
         assertTrue(activeAccounts.isNotEmpty())
         assertTrue(activeAccounts.all { it.status == "ACTIVE" })

@@ -1,4 +1,5 @@
 package com.theoriongd.reqstrata.ui.screens.testing
+import androidx.compose.material.icons.automirrored.filled.*
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -127,7 +128,7 @@ fun GenerateTestSuiteScreen(
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
-                                        Icons.Default.FactCheck,
+                                        Icons.AutoMirrored.Filled.FactCheck,
                                         contentDescription = null,
                                         tint = Color(0xFF10B981),
                                         modifier = Modifier.size(22.dp)

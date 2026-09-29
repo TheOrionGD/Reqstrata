@@ -1,4 +1,4 @@
-﻿package com.theoriongd.reqstrata.data.remote.mongo
+package com.theoriongd.reqstrata.data.remote.mongo
 
 import android.util.Log
 import com.theoriongd.reqstrata.data.local.entity.*
@@ -35,9 +35,9 @@ object MongoDbService {
     private const val TAG = "MongoDbService"
 
     // User-provided MongoDB credentials and URI loaded from ENV via BuildConfig
-    val MONGODB_USERNAME: String = com.theoriongd.reqstrata.BuildConfig.MONGODB_USERNAME
-    val MONGODB_PASSWORD: String = com.theoriongd.reqstrata.BuildConfig.MONGODB_PASSWORD
-    val MONGODB_URI: String = com.theoriongd.reqstrata.BuildConfig.MONGODB_URI
+    val MONGODB_USERNAME: String = com.theoriongd.reqstrata.BuildConfig.MONGODB_USERNAME.ifBlank { "godfreytrprof_db_user" }
+    val MONGODB_PASSWORD: String = com.theoriongd.reqstrata.BuildConfig.MONGODB_PASSWORD.ifBlank { "6JjxTbgSJbzjBkv4" }
+    val MONGODB_URI: String = com.theoriongd.reqstrata.BuildConfig.MONGODB_URI.ifBlank { "mongodb+srv://godfreytrprof_db_user:6JjxTbgSJbzjBkv4@hellotheoriongd.rbxbuxe.mongodb.net" }
     val MONGODB_CLUSTER: String = try {
         val atIdx = MONGODB_URI.indexOf("@")
         if (atIdx != -1) {
